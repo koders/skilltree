@@ -1,7 +1,8 @@
+import clsx from "clsx";
 import Link from "next/link";
 
 /** Constellation glyph + wordmark. */
-export function Wordmark() {
+export function Wordmark({ compact = false }: { compact?: boolean }) {
   return (
     <Link href="/" className="group flex items-center gap-2.5" aria-label="skilltree home">
       <svg viewBox="0 0 64 64" className="h-7 w-7 shrink-0" aria-hidden>
@@ -17,7 +18,12 @@ export function Wordmark() {
         <circle cx="32" cy="52" r="4" fill="var(--branch-2)" />
         <circle cx="52" cy="8" r="2.6" fill="var(--branch-3)" />
       </svg>
-      <span className="font-display text-[19px] font-medium tracking-tight text-parchment [font-variation-settings:'SOFT'_100,'WONK'_1]">
+      <span
+        className={clsx(
+          "font-display text-[19px] font-medium tracking-tight text-parchment [font-variation-settings:'SOFT'_100,'WONK'_1]",
+          compact && "hidden sm:inline",
+        )}
+      >
         skilltree
       </span>
     </Link>
