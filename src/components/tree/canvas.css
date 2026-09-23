@@ -1,0 +1,135 @@
+/* Constellation canvas: React Flow chrome overrides and the few keyframes the
+   orbs and edges need. Scoped under .st-canvas so nothing leaks. */
+
+.st-canvas .react-flow__pane {
+  cursor: grab;
+}
+.st-canvas .react-flow__pane.dragging {
+  cursor: grabbing;
+}
+.st-canvas .react-flow__renderer,
+.st-canvas .react-flow__viewport {
+  z-index: auto;
+}
+.st-canvas .react-flow__edge,
+.st-canvas .react-flow__edge path {
+  pointer-events: none;
+  cursor: default;
+}
+.st-canvas .react-flow__node {
+  cursor: default;
+}
+.st-canvas .react-flow__node:focus,
+.st-canvas .react-flow__node:focus-visible {
+  outline: none;
+}
+.st-canvas .st-handle {
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  top: 50%;
+  left: 50%;
+}
+
+.st-canvas .st-label {
+  transition: opacity 220ms ease;
+}
+/* Too small to read when zoomed out: FarLabels names the orbs in play instead. */
+.st-canvas.st-far .st-label {
+  opacity: 0;
+  pointer-events: none;
+}
+.st-canvas .st-node[data-dimmed="true"] {
+  opacity: 0.16;
+  filter: saturate(0.4);
+}
+.st-canvas .st-node {
+  transition:
+    opacity 260ms ease,
+    filter 260ms ease;
+}
+
+.st-label-text {
+  text-shadow:
+    0 1px 2px var(--ink-950),
+    0 0 10px var(--ink-950),
+    0 0 18px var(--ink-950);
+}
+
+/* Energy flowing along an unlock path, from prerequisite to dependent. */
+@keyframes st-flow {
+  to {
+    stroke-dashoffset: -34;
+  }
+}
+.st-flow {
+  animation: st-flow 1.3s linear infinite;
+}
+
+@keyframes st-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.st-spin {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: st-spin 40s linear infinite;
+}
+.st-spin-slow {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: st-spin 160s linear infinite;
+}
+
+@keyframes st-bob {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, -4px);
+  }
+}
+.st-bob {
+  animation: st-bob 1.6s ease-in-out infinite;
+}
+
+@keyframes st-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.st-appear {
+  animation: st-appear 700ms cubic-bezier(0.2, 0.8, 0.2, 1.1) both;
+}
+
+@keyframes st-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.08);
+  }
+}
+.st-breathe {
+  animation: st-breathe 2.8s ease-in-out infinite;
+}
+
+.st-vignette {
+  background:
+    radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(3, 5, 10, 0.55) 100%),
+    linear-gradient(180deg, rgba(3, 5, 10, 0.35), transparent 14%, transparent 86%, rgba(3, 5, 10, 0.4));
+}
