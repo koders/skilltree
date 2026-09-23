@@ -14,7 +14,10 @@
     "content:ids": "tsx scripts/content-ids.ts",
     "content:bundle": "tsx scripts/export-bundle.ts",
     "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts",
-    "check": "pnpm validate && pnpm typecheck && pnpm lint && pnpm test"
+    "check": "pnpm validate && pnpm typecheck && pnpm lint && pnpm test",
+    "progress:export": "tsx --env-file=.env.local scripts/progress.ts export",
+    "progress:import": "tsx --env-file=.env.local scripts/progress.ts import",
+    "db:smoke": "tsx --env-file=.env.local scripts/db-smoke.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.0",

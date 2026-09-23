@@ -1,26 +1,290 @@
 @import "tailwindcss";
 
+/*
+ * skilltree — celestial star-atlas HUD.
+ * Ink-dark sky, parchment text, gold for XP/levels, one hue per branch.
+ * Dark only: it's a star chart.
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* sky */
+  --ink-950: #05080f;
+  --ink-900: #070b16;
+  --ink-850: #0a1020;
+  --ink-800: #0d1528;
+  --ink-700: #141e36;
+  --ink-600: #1e2a47;
+  --ink-500: #2b3a5c;
+  --ink-400: #45557a;
+
+  /* text */
+  --parchment: #ece6d6;
+  --parchment-dim: #b9b3a3;
+  --mist: #8b93a7;
+  --mist-dim: #5d6680;
+
+  /* accents */
+  --gold: #e9c46a;
+  --gold-bright: #ffe29a;
+  --gold-deep: #b8913a;
+  --rust: #c8663b;
+  --rust-bright: #ef8a57;
+  --stale: #d98e3f;
+  --danger: #ef6b6b;
+  --ok: #7fd9a8;
+
+  /* branches (defaults; content can override per branch) */
+  --branch-1: #5ec8f2;
+  --branch-2: #56d39b;
+  --branch-3: #b69cff;
+  --branch-4: #f28f6b;
+  --branch-5: #f2c14e;
+  --branch-6: #ff7eb6;
+  --branch-7: #7ee0d0;
+  --branch-8: #9fb4ff;
+
+  /* item types */
+  --type-watch: #7fb8ff;
+  --type-read: #a9c4e8;
+  --type-do: #56d39b;
+  --type-build: #f2a65a;
+  --type-output: #e9c46a;
+  --type-habit: #c49cff;
+  --type-recall: #ff9ec7;
+
+  --radius: 14px;
+  --panel-bg: rgba(10, 16, 32, 0.82);
+  --panel-border: rgba(69, 85, 122, 0.45);
+  --topbar-h: 56px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink-950: var(--ink-950);
+  --color-ink-900: var(--ink-900);
+  --color-ink-850: var(--ink-850);
+  --color-ink-800: var(--ink-800);
+  --color-ink-700: var(--ink-700);
+  --color-ink-600: var(--ink-600);
+  --color-ink-500: var(--ink-500);
+  --color-ink-400: var(--ink-400);
+  --color-parchment: var(--parchment);
+  --color-parchment-dim: var(--parchment-dim);
+  --color-mist: var(--mist);
+  --color-mist-dim: var(--mist-dim);
+  --color-gold: var(--gold);
+  --color-gold-bright: var(--gold-bright);
+  --color-gold-deep: var(--gold-deep);
+  --color-rust: var(--rust);
+  --color-rust-bright: var(--rust-bright);
+  --color-stale: var(--stale);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+  --color-type-watch: var(--type-watch);
+  --color-type-read: var(--type-read);
+  --color-type-do: var(--type-do);
+  --color-type-build: var(--type-build);
+  --color-type-output: var(--type-output);
+  --color-type-habit: var(--type-habit);
+  --color-type-recall: var(--type-recall);
+
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
+
+  --radius-panel: var(--radius);
+
+  --animate-glow-pulse: glow-pulse 2.8s ease-in-out infinite;
+  --animate-rise: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-twinkle: twinkle 5s ease-in-out infinite;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
+  background: var(--ink-900);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(1200px 700px at 70% -10%, rgba(94, 200, 242, 0.07), transparent 60%),
+    radial-gradient(900px 600px at -10% 110%, rgba(182, 156, 255, 0.07), transparent 60%),
+    var(--ink-900);
+  color: var(--parchment);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+}
+
+::selection {
+  background: rgba(233, 196, 106, 0.35);
+  color: var(--parchment);
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-500) transparent;
+}
+
+/* A faint star field. Layered dot gradients, no image assets. */
+.starfield {
+  background-color: var(--ink-950);
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, rgba(236, 230, 214, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 140px 90px, rgba(236, 230, 214, 0.35), transparent 60%),
+    radial-gradient(1.5px 1.5px at 260px 180px, rgba(233, 196, 106, 0.45), transparent 60%),
+    radial-gradient(1px 1px at 330px 40px, rgba(236, 230, 214, 0.3), transparent 60%),
+    radial-gradient(1px 1px at 90px 250px, rgba(158, 180, 255, 0.4), transparent 60%),
+    radial-gradient(1px 1px at 210px 320px, rgba(236, 230, 214, 0.25), transparent 60%),
+    radial-gradient(1200px 900px at 50% 50%, rgba(20, 30, 54, 0.9), rgba(5, 8, 15, 1) 70%);
+  background-size:
+    360px 360px,
+    360px 360px,
+    360px 360px,
+    360px 360px,
+    360px 360px,
+    360px 360px,
+    100% 100%;
+}
+
+/* Glass panel used by the side panel, dialogs and cards. */
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow:
+    0 1px 0 rgba(236, 230, 214, 0.04) inset,
+    0 24px 60px -20px rgba(0, 0, 0, 0.6);
+}
+
+/* Small uppercase HUD label. */
+.hud-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mist);
+}
+
+/* Engraved hairline divider with a centred star. */
+.divider-star {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-400);
+}
+.divider-star::before,
+.divider-star::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ink-500), transparent);
+}
+
+/* Prose inside content fields and notes. */
+.prose-atlas {
+  line-height: 1.6;
+  color: var(--parchment-dim);
+}
+.prose-atlas a {
+  color: var(--parchment);
+  text-decoration: underline;
+  text-decoration-color: var(--ink-400);
+  text-underline-offset: 3px;
+}
+.prose-atlas a:hover {
+  text-decoration-color: var(--gold);
+}
+.prose-atlas code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--ink-700);
+  border: 1px solid var(--ink-600);
+  border-radius: 5px;
+  padding: 0.05em 0.35em;
+  color: var(--parchment);
+}
+.prose-atlas strong {
+  color: var(--parchment);
+  font-weight: 600;
+}
+.prose-atlas ul {
+  list-style: disc;
+  padding-left: 1.2em;
+}
+.prose-atlas ol {
+  list-style: decimal;
+  padding-left: 1.4em;
+}
+.prose-atlas p + p,
+.prose-atlas p + ul,
+.prose-atlas ul + p {
+  margin-top: 0.5em;
+}
+.prose-atlas table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92em;
+}
+.prose-atlas th,
+.prose-atlas td {
+  border-bottom: 1px solid var(--ink-600);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+.prose-atlas h1,
+.prose-atlas h2,
+.prose-atlas h3 {
+  font-family: var(--font-display);
+  color: var(--parchment);
+  margin: 1em 0 0.4em;
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
