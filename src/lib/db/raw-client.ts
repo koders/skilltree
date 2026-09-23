@@ -20,21 +20,25 @@ export function readSupabaseEnv(env: Record<string, string | undefined> = proces
   return { url, secretKey };
 }
 
-const CLOCK_SKEW_RETRY_MS = 1000;
+/** Delays before each retry; the skew seen on cold starts is 1–3 s. */
+const CLOCK_SKEW_RETRY_MS = [1000, 1500, 2500];
 
 /**
  * The gateway mints a short-lived JWT from the sb_secret_ key; on a cold start
  * PostgREST occasionally rejects it with 401 "JWT issued at future" (clock
- * skew between the two). The request never ran, so one delayed retry is safe
+ * skew between the two). The request never ran, so delayed retries are safe
  * even for writes.
  */
 export const fetchWithClockSkewRetry: typeof fetch = async (input, init) => {
-  const res = await fetch(input, init);
-  if (res.status !== 401) return res;
-  const body = await res.clone().text();
-  if (!/issued at future/i.test(body)) return res;
-  await new Promise((resolve) => setTimeout(resolve, CLOCK_SKEW_RETRY_MS));
-  return fetch(input, init);
+  let res = await fetch(input, init);
+  for (const delay of CLOCK_SKEW_RETRY_MS) {
+    if (res.status !== 401) return res;
+    const body = await res.clone().text();
+    if (!/issued at future/i.test(body)) return res;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    res = await fetch(input, init);
+  }
+  return res;
 };
 
 /** A service client using the secret key: bypasses RLS, never ship it to the browser. */
