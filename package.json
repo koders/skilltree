@@ -17,7 +17,8 @@
     "check": "pnpm validate && pnpm typecheck && pnpm lint && pnpm test",
     "progress:export": "tsx --env-file=.env.local scripts/progress.ts export",
     "progress:import": "tsx --env-file=.env.local scripts/progress.ts import",
-    "db:smoke": "tsx --env-file=.env.local scripts/db-smoke.ts"
+    "db:smoke": "tsx --env-file=.env.local scripts/db-smoke.ts",
+    "prepare": "simple-git-hooks"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.0",
@@ -50,5 +51,8 @@
     "typescript": "^5",
     "vitest": "^5.0.1"
   },
-  "packageManager": "pnpm@10.13.1"
+  "packageManager": "pnpm@10.13.1",
+  "simple-git-hooks": {
+    "pre-commit": "pnpm -s validate --quiet && pnpm -s test"
+  }
 }
