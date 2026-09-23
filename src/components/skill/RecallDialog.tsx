@@ -165,15 +165,23 @@ function RecallFlow({
     if (grades.some((g) => g === null)) return;
     setError(null);
     startTransition(async () => {
-      const res = await submitRecall({
-        skillId: skill.id,
-        mode,
-        answers: questions.map((q, i) => ({
-          questionId: q.id,
-          result: grades[i] ?? "fail",
-          answer: answers[i].trim() || null,
-        })),
-      });
+      let res: Awaited<ReturnType<typeof submitRecall>>;
+      try {
+        res = await submitRecall({
+          skillId: skill.id,
+          mode,
+          answers: questions.map((q, i) => ({
+            questionId: q.id,
+            result: grades[i] ?? "fail",
+            answer: answers[i].trim() || null,
+          })),
+        });
+      } catch (err) {
+        // A transport failure (server down or restarting, stale action id) rejects instead of
+        // returning ok:false; thrown from a transition it would reach the error boundary and
+        // unmount the dialog with every answer. Keep them and let the user retry.
+        res = { ok: false, error: err instanceof Error ? err.message : String(err) };
+      }
       if (!res.ok) {
         setError(res.error);
         return;
@@ -347,7 +355,9 @@ function QuestionStep({
           }
         }}
         rows={5}
+        // autoFocus covers later questions; data-autofocus the first, when the dialog opens.
         autoFocus
+        data-autofocus
         placeholder={mode === "test-out" ? "From memory, no notes…" : "In my own words…"}
         className={clsx(inputClass, "mt-1.5 resize-y !text-[14px] leading-relaxed")}
       />

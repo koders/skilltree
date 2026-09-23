@@ -48,7 +48,10 @@ export interface ItemView {
   blocking: boolean;
   // Time-sensitive items only (null/false otherwise):
   asOf: string | null;
+  /** Local date of the latest "Still true" re-verification. */
   lastVerifiedAt: string | null;
+  /** Local date of an "It changed" check not yet dealt with (the content still needs an edit). */
+  changedOn: string | null;
   staleOn: string | null;
   stale: boolean;
   noteCount: number;
@@ -64,6 +67,7 @@ export interface RankView {
   missingRequires: string[];
   /** All blocking items done or skipped (always true once the skill is learned). */
   complete: boolean;
+  /** Blocking items done or skipped; all of them once a test-out or self-report covered the skill. */
   doneCount: number;
   blockingCount: number;
   /** 0..1, by estimated minutes of blocking items done or skipped. */
@@ -79,7 +83,7 @@ export interface SkillView {
   /** Seeded as learned (self-reported) in content. */
   isStarting: boolean;
   starred: boolean;
-  /** Skill-level requires not learned. */
+  /** Skill-level requires not learned, or every rank locked (then missingRequires are the first rank's). */
   locked: boolean;
   missingRequires: string[];
   ranks: RankView[];
@@ -88,7 +92,7 @@ export interface SkillView {
   progress: number;
   /** Every rank complete but not learned yet: next step is answering Recall. */
   readyToComplete: boolean;
-  /** Not locked, not learned (or self-reported), and has ≥ 1 Recall question. */
+  /** Not locked, every rank unlocked, not learned (or self-reported), and has ≥ 1 Recall question. */
   canTestOut: boolean;
   rust: RustInfo;
   minutesLogged: number;

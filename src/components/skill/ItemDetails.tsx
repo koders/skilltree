@@ -7,6 +7,7 @@ import { Markdown } from "@/components/ui/Markdown";
 import type { Item, ItemField } from "@/lib/content/types";
 import type { ItemView } from "@/lib/engine/types";
 import { usePanel } from "./context";
+import { remainingMinutes } from "./format";
 import { NoteCard, NoteForm } from "./NotesSection";
 import { LogTimeForm } from "./TimeLogSection";
 import { VerifyControl } from "./VerifyControl";
@@ -60,7 +61,13 @@ export function ItemDetails({ item, itemView }: { item: Item; itemView: ItemView
       )}
 
       {form === "time" && (
-        <LogTimeForm itemId={item.id} fixedActivity={item.type ?? "other"} defaultMinutes={item.minutes} onDone={() => setForm(null)} />
+        <LogTimeForm
+          itemId={item.id}
+          fixedActivity={item.type ?? "other"}
+          // What's left of the estimate, like the completion form: sessions add up to it.
+          defaultMinutes={remainingMinutes(item.minutes, itemView?.minutesLogged ?? 0)}
+          onDone={() => setForm(null)}
+        />
       )}
       {form === "note" && <NoteForm itemId={item.id} initialKind="note" lockKind onDone={() => setForm(null)} />}
       {form === "loot" && <NoteForm itemId={item.id} initialKind="output" lockKind onDone={() => setForm(null)} />}

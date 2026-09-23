@@ -18,7 +18,7 @@ describe("computeRust: freshness", () => {
 
   it("leaves non-time-sensitive items without dates", () => {
     const { items } = computeRust(basics(), [], [], LEARNED, "2026-09-23");
-    expect(items["read-intro"]).toEqual({ asOf: null, lastVerifiedAt: null, staleOn: null, stale: false });
+    expect(items["read-intro"]).toEqual({ asOf: null, lastVerifiedAt: null, changedOn: null, staleOn: null, stale: false });
   });
 
   it("inherits the skill's facts_as_of unless the item overrides it", () => {
@@ -55,17 +55,87 @@ describe("computeRust: freshness", () => {
     const rows = [
       verification("a.basics", "ts-fact", "2026-07-01T08:00:00Z"),
       // 21:30Z on the 10th is 00:30 on the 11th in Riga.
-      verification("a.basics", "ts-fact", "2026-09-10T21:30:00Z", true),
+      verification("a.basics", "ts-fact", "2026-09-10T21:30:00Z"),
     ];
     const { items, rust } = computeRust(basics(), rows, [], LEARNED, "2026-09-23");
     expect(items["ts-fact"]).toEqual({
       asOf: "2026-09-11",
       lastVerifiedAt: "2026-09-11",
+      changedOn: null,
       staleOn: "2026-12-10",
       stale: false,
     });
     expect(rust.isRusty).toBe(false);
     expect(rust.nextStaleOn).toBe("2026-11-30");
+  });
+
+  describe("a check that found the fact changed", () => {
+    // ts-override: As of 2026-09-01, fresh until 2026-11-30.
+    const changed = verification("a.basics", "ts-override", "2026-09-20T08:00:00Z", true);
+
+    it("keeps the item stale (from the day of the check) instead of refreshing it", () => {
+      const { items, rust } = computeRust(basics(), [changed], [], LEARNED, "2026-09-23");
+      expect(items["ts-override"]).toEqual({
+        asOf: "2026-09-01",
+        lastVerifiedAt: null,
+        changedOn: "2026-09-20",
+        staleOn: "2026-09-20",
+        stale: true,
+      });
+      expect(rust.stale.map((s) => s.itemId)).toContain("ts-override");
+      expect(rust.stale.find((s) => s.itemId === "ts-override")).toMatchObject({ staleSince: "2026-09-20", daysStale: 3 });
+      expect(rust.isRusty).toBe(true);
+    });
+
+    it("doesn't clear rust on an item that was already stale", () => {
+      // ts-fact went stale on 2026-08-30; "It changed" must not restart its window.
+      const rows = [verification("a.basics", "ts-fact", "2026-09-20T08:00:00Z", true)];
+      const { items, rust } = computeRust(basics(), rows, [], LEARNED, "2026-12-23");
+      expect(items["ts-fact"]).toMatchObject({ asOf: "2026-06-01", staleOn: "2026-08-30", stale: true, changedOn: "2026-09-20" });
+      expect(rust.isRusty).toBe(true);
+    });
+
+    it("stays stale after an earlier 'Still true'", () => {
+      const rows = [verification("a.basics", "ts-override", "2026-09-10T08:00:00Z"), changed];
+      const { items } = computeRust(basics(), rows, [], LEARNED, "2026-09-23");
+      expect(items["ts-override"]).toMatchObject({ asOf: "2026-09-10", lastVerifiedAt: "2026-09-10", changedOn: "2026-09-20", stale: true });
+    });
+
+    it("clears on a later 'Still true' (the content was updated)", () => {
+      const rows = [changed, verification("a.basics", "ts-override", "2026-09-21T08:00:00Z")];
+      const { items, rust } = computeRust(basics(), rows, [], LEARNED, "2026-09-23");
+      expect(items["ts-override"]).toEqual({
+        asOf: "2026-09-21",
+        lastVerifiedAt: "2026-09-21",
+        changedOn: null,
+        staleOn: "2026-12-20",
+        stale: false,
+      });
+      expect(rust.stale.map((s) => s.itemId)).not.toContain("ts-override");
+    });
+
+    it("clears once the content's As of date is on or after the check", () => {
+      const skill = makeSkill({
+        id: "a.basics",
+        ranks: [{ items: [{ id: "ts-override", timeSensitive: true, asOf: "2026-09-20" }] }],
+      });
+      const { items, rust } = computeRust(skill, [changed], [], LEARNED, "2026-09-23");
+      expect(items["ts-override"]).toMatchObject({ asOf: "2026-09-20", changedOn: null, staleOn: "2026-12-19", stale: false });
+      expect(rust.isRusty).toBe(false);
+    });
+
+    it("wins a tie with a 'Still true' at the same instant, whatever the row order", () => {
+      const same = verification("a.basics", "ts-override", "2026-09-20T08:00:00Z");
+      for (const rows of [[changed, same], [same, changed]]) {
+        expect(computeRust(basics(), rows, [], LEARNED, "2026-09-23").items["ts-override"].stale).toBe(true);
+      }
+    });
+
+    it("flags unlearned skills' facts without making them rusty", () => {
+      const { rust } = computeRust(basics(), [changed], [], NOT_LEARNED, "2026-09-23");
+      expect(rust.stale.map((s) => s.itemId)).toContain("ts-override");
+      expect(rust.isRusty).toBe(false);
+    });
   });
 
   it("never moves the as-of date backwards for an older verification", () => {
@@ -90,7 +160,7 @@ describe("computeRust: freshness", () => {
       ranks: [{ items: [{ id: "ts", timeSensitive: true }] }],
     });
     const { items, rust } = computeRust(skill, [], [], LEARNED, "2030-01-01");
-    expect(items.ts).toEqual({ asOf: null, lastVerifiedAt: null, staleOn: null, stale: false });
+    expect(items.ts).toEqual({ asOf: null, lastVerifiedAt: null, changedOn: null, staleOn: null, stale: false });
     expect(rust).toEqual({ stale: [], failedReview: false, isRusty: false, nextStaleOn: null });
   });
 

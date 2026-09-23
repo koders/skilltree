@@ -19,11 +19,14 @@ Short records of the architecture calls for v1: what was chosen, why, and what w
 
 **Chosen:** Next.js 16 (App Router, React 19, React Compiler), Tailwind v4 and TypeScript. Pages are dynamic server components. They read content from `content/` (parsed on the server; cached in production, re-parsed per request in dev) and progress from Supabase through `supabase-js` with the **secret key, server-side only** (`import 'server-only'`). Mutations are Server Actions followed by `refresh()`.
 
-- **No login.** It runs locally for now, as decided on 2026-09-23. Because the browser never talks to Supabase, adding a passphrase gate later is one `proxy.ts` plus a cookie, with no data-layer changes.
+- **No user system, two modes** (`src/proxy.ts`):
+  - *`APP_PASSWORD` unset* (the default, decided 2026-09-23): **local only, enforced.** `pnpm dev` / `pnpm start` bind to `127.0.0.1`, and the proxy refuses any request whose `Host` isn't `localhost`/`127.0.0.1`/`[::1]` (DNS rebinding) and any write whose `Origin` is another site. Without that, anyone on the same Wi-Fi could read the export or run a replace import.
+  - *`APP_PASSWORD` set* (for a deploy, e.g. Vercel, or phone access): **passphrase gate.** Any host may connect, but every request needs an httpOnly, SameSite=Lax session cookie from `/unlock`. The cookie is HMAC-signed with a key derived from the passphrase, lasts 30 days, and is invalidated by changing the passphrase. Pages without the cookie redirect to `/unlock`; writes get 401. (`src/lib/gate.ts`)
+  - Because the browser never talks to Supabase directly, neither mode touches the data layer.
 - **RLS is on for every table with no policies**, so the publishable/anon key can read nothing. Only the secret key (server) gets through.
 
 **Rejected:**
-- *Supabase Auth + RLS by user_id*: multi-user machinery for a single user (the brief says not to copy multi-user auth).
+- *Supabase Auth + RLS by user_id*: multi-user machinery for a single user (the brief says not to copy multi-user auth). A passphrase is enough for one person.
 - *Client-side Supabase*: it would put a key in the browser and duplicate business logic on the client.
 - *Cache Components (`cacheComponents: true`)*: every page depends on live progress, so there's nothing worth caching yet.
 
@@ -49,6 +52,8 @@ It's rendered with React Flow (`@xyflow/react`, MIT) for pan, zoom and hit-testi
 
 **Why:** the brief says "feel like a game skill tree, not an org chart". A layered top-down layout (dagre/ELK) is exactly an org chart. The radial layout reads like a Path of Exile tree or a constellation, grows naturally as branches are added, and is still derived entirely from prerequisites (Human Skill Tree hand-configures positions; we don't).
 
+**First view:** like a game's skill screen, the canvas opens on the hub and the skills in play (available, in progress, rusty, this week's quest) at a readable zoom. "Fit" shows the whole tree. Fitting everything on first load meant 38% zoom and orbs the size of specks.
+
 **Rejected:**
 - *dagre/ELK layered*: org-chart look.
 - *force-directed*: non-deterministic; nodes jump between visits.
@@ -58,7 +63,7 @@ It's rendered with React Flow (`@xyflow/react`, MIT) for pan, zoom and hit-testi
 
 **Chosen:** one parser (`src/lib/content/parse*.ts`) produces a typed AST with line numbers. The same AST feeds the validator (`pnpm validate`), the importer and the app. The validator runs:
 
-- in a pre-commit hook (`simple-git-hooks`, only when content or the library changes)
+- in a pre-commit hook (`simple-git-hooks`: `pnpm validate --quiet` and the tests, on every commit)
 - in GitHub Actions CI, together with typecheck, lint, tests and build
 
 **Why:** a single parser means the app and the validator can't disagree about what a file means.
@@ -73,8 +78,8 @@ These are the defaults from guide §7, tuned for weekly 4–5 h blocks. All the 
   - *tested out*: all Recall answered before starting
   - *self-reported*: a starting skill, or "I already know this"
   Recall grading is self-assessed: the questions have no answer keys, so I type an answer and mark it got it / not yet.
-- **Locked:** a skill-level `requires` isn't learned. A rank-level `requires` locks just that rank.
-- **Rust:** a learned skill with a time-sensitive item past the 90-day window turns rusty. So does a failed review, once spaced review exists. Unlearned skills show a stale-facts flag instead.
+- **Locked:** a skill-level `requires` isn't learned. A rank-level `requires` locks just that rank, but a skill whose every rank is locked is locked too, since nothing in it can be worked yet. Test-out waits for every rank's `requires`, like the completion check: passing either clears every rank.
+- **Rust:** a learned skill with a time-sensitive item past the 90-day window, or with an "It changed" check the content hasn't caught up with yet, turns rusty. So does a failed review, once spaced review exists. Unlearned skills show a stale-facts flag instead.
 - **XP:** minutes logged × weight:
   - `watch`/`read`/`habit` ×1
   - `do` ×1.5
@@ -93,6 +98,8 @@ These are the defaults from guide §7, tuned for weekly 4–5 h blocks. All the 
 - when this week's slice is done, the next items, as "get ahead"
 
 **Why:** the plan adapts to what I've actually done, with no schedule rows to maintain. Test-outs and self-reports simply clear their items.
+
+**Maintenance** habits switch on at the quest's `from week` and **keep running after the run is marked completed**, because they exist to keep learned skills from going rusty. Pausing a run pauses them.
 
 **Later (fits without schema changes):** forking a quest is a new `quest_runs` row with `forked_from` and a `definition` override (JSON). Spaced review uses the existing `recall_attempts` and `recall_cards` tables, `mode = 'review'`. The Claude Code review skill writes `recall_attempts` with `source = 'claude-review'` through `pnpm progress:import` (the same JSON format as the in-app export).
 

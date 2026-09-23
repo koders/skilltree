@@ -5,11 +5,12 @@
 
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { LEITNER_INTERVALS_DAYS } from "@/lib/config";
+import { IMPORT_MAX_CHARS, LEITNER_INTERVALS_DAYS } from "@/lib/config";
 import { isStartingSkill, type Skill } from "@/lib/content/types";
 import { recallCardFromDb, rowsToDb, SNAPSHOT_KEYS, TABLES, type SnapshotKey } from "@/lib/db/rows";
 import { loadSnapshotWith } from "@/lib/db/snapshot";
 import { addDays, isIsoDate, localToday, periodStart, startOfWeek } from "@/lib/engine/dates";
+import type { SkillView } from "@/lib/engine/types";
 import { parseExport, planImport, type ImportCounts } from "@/lib/progress/export";
 import type {
   LearnedVia,
@@ -136,7 +137,7 @@ export const logHabitSchema = z.object({
 export const undoHabitSchema = z.object({ habitLogId: uuid });
 
 export const importProgressSchema = z.object({
-  json: z.string().min(2).max(20_000_000),
+  json: z.string().min(2).max(IMPORT_MAX_CHARS),
   mode: z.enum(["replace", "merge"]),
 });
 
@@ -217,6 +218,29 @@ export function learnedViaAfterRecall(args: {
   const effective = args.current ?? (args.isStarting ? "self-reported" : null);
   if (effective !== null && effective !== "self-reported") return null;
   return args.mode === "test-out" ? "tested-out" : "completed";
+}
+
+/**
+ * Why a test-out or completion check can't be submitted for a skill right now,
+ * or null. The dialog only offers them when they're allowed, but its view can
+ * be stale (an item undone in another tab) and the action is reachable without
+ * it, so the server checks the same flags (docs/decisions.md D6).
+ */
+export function recallBlockedReason(
+  view: Pick<SkillView, "learned" | "locked" | "readyToComplete" | "canTestOut">,
+  mode: RecallMode,
+): string | null {
+  if (mode === "complete" && !view.readyToComplete) {
+    return view.learned
+      ? "This skill is already learned."
+      : "Not ready for the completion check: clear every rank's required items (and unlock every rank) first.";
+  }
+  if (mode === "test-out" && !view.canTestOut) {
+    if (view.locked) return "This skill is locked: learn its prerequisites first.";
+    if (view.learned) return "This skill is already learned.";
+    return "Test-out opens once every rank's prerequisites are learned.";
+  }
+  return null;
 }
 
 /** Fresh Leitner cards for a skill that was just learned: box 1, due after the first interval. */
@@ -334,6 +358,9 @@ export async function setItemStatus(client: SupabaseClient, raw: SetItemStatusIn
       ),
     "Saving item status",
   );
+  await ensureSkillStarted(client, input.skillId, at);
+  // Last, since nothing here is one transaction: if an earlier write fails, the retry
+  // the user makes won't log the same minutes a second time.
   if (input.minutes && input.minutes > 0) {
     must(
       await client.from("time_logs").insert({
@@ -346,7 +373,6 @@ export async function setItemStatus(client: SupabaseClient, raw: SetItemStatusIn
       "Logging time",
     );
   }
-  await ensureSkillStarted(client, input.skillId, at);
 }
 
 export async function logTime(client: SupabaseClient, raw: LogTimeInput): Promise<{ id: string }> {
@@ -705,6 +731,14 @@ export async function importProgress(client: SupabaseClient, raw: ImportProgress
 
   if (plan.mode === "merge") {
     for (const key of SNAPSHOT_KEYS) {
+      if (key === "questRuns") {
+        // quest_runs_one_active_idx is checked row by row, not per statement: pause (or
+        // finish) runs before activating one, or swapping the active run fails on id order.
+        const runs = plan.writes.questRuns;
+        await writeRows(client, "questRuns", runs.filter((r) => r.status !== "active"), "upsert");
+        await writeRows(client, "questRuns", runs.filter((r) => r.status === "active"), "upsert");
+        continue;
+      }
       const rows = plan.writes[key];
       if (rows.length > 0) await writeRows(client, key, rows, "upsert");
     }

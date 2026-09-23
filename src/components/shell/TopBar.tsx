@@ -36,7 +36,8 @@ function hours(minutes: number): string {
   return h >= 10 || Number.isInteger(h) ? `${Math.round(h)}` : h.toFixed(1);
 }
 
-export function TopBar({ stats }: { stats: TopBarStats }) {
+/** `stats` is null when progress couldn't be loaded: the bar keeps its navigation, the page shows the error. */
+export function TopBar({ stats }: { stats: TopBarStats | null }) {
   const pathname = usePathname();
   const navRef = useRef<HTMLElement>(null);
 
@@ -51,7 +52,7 @@ export function TopBar({ stats }: { stats: TopBarStats }) {
     else if (t.left < n.left) nav.scrollLeft -= n.left - t.left + 8;
   }, [pathname]);
   const ring = 2 * Math.PI * 15;
-  const target = stats.weekTargetMinutes;
+  const target = stats?.weekTargetMinutes ?? null;
 
   return (
     <header className="sticky top-0 z-40 h-[var(--topbar-h)] border-b border-ink-600/60 bg-ink-900/80 backdrop-blur-md">
@@ -86,59 +87,61 @@ export function TopBar({ stats }: { stats: TopBarStats }) {
           <span className="w-5 shrink-0 sm:hidden" aria-hidden />
         </nav>
 
-        <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-          <div
-            className="hidden items-center gap-1.5 font-mono text-[12px] text-mist md:flex"
-            title={target ? `This week: ${hours(stats.thisWeekMinutes)} h of ${hours(target.min)}–${hours(target.max)} h` : "Logged this week"}
-          >
-            <span className="text-parchment">{hours(stats.thisWeekMinutes)}</span>
-            <span>{target ? `/ ${hours(target.min)}–${hours(target.max)} h` : "h this week"}</span>
-          </div>
-
-          <div
-            className={clsx(
-              "hidden items-center gap-1 font-mono text-[12px] min-[420px]:flex",
-              stats.weeklyStreak > 0 ? "text-gold" : "text-mist-dim",
-            )}
-            title={`Weekly streak: ${stats.weeklyStreak} week${stats.weeklyStreak === 1 ? "" : "s"} with 2 h+ logged`}
-          >
-            <Flame className="h-4 w-4" strokeWidth={1.8} />
-            <span>{stats.weeklyStreak}w</span>
-          </div>
-
-          <div
-            className="flex items-center gap-2"
-            title={`${stats.totalXp.toLocaleString("en")} XP · next level at ${stats.nextLevelAt.toLocaleString("en")}`}
-          >
-            {/* The number sits in the same box as the ring: the rotated SVG would otherwise paint over it. */}
-            <div className="relative grid h-9 w-9 shrink-0 place-items-center">
-              <svg viewBox="0 0 36 36" className="absolute inset-0 h-9 w-9 -rotate-90" aria-hidden>
-                <circle cx="18" cy="18" r="15" fill="var(--ink-800)" stroke="var(--ink-600)" strokeWidth="2.5" />
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="15"
-                  fill="none"
-                  stroke="var(--gold)"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeDasharray={`${ring * stats.progressToNext} ${ring}`}
-                  className="drop-shadow-[0_0_4px_var(--gold)]"
-                />
-              </svg>
-              <span className="relative font-display text-[14px] font-semibold leading-none text-gold-bright">
-                <span className="sr-only">Level </span>
-                {stats.level}
-              </span>
+        {stats && (
+          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+            <div
+              className="hidden items-center gap-1.5 font-mono text-[12px] text-mist md:flex"
+              title={target ? `This week: ${hours(stats.thisWeekMinutes)} h of ${hours(target.min)}–${hours(target.max)} h` : "Logged this week"}
+            >
+              <span className="text-parchment">{hours(stats.thisWeekMinutes)}</span>
+              <span>{target ? `/ ${hours(target.min)}–${hours(target.max)} h` : "h this week"}</span>
             </div>
-            <div className="hidden leading-tight lg:block">
-              <div className="hud-label !text-[9.5px]">Level</div>
-              <div className="font-mono text-[11.5px] text-parchment-dim">
-                {stats.totalXp.toLocaleString("en")} XP
+
+            <div
+              className={clsx(
+                "hidden items-center gap-1 font-mono text-[12px] min-[420px]:flex",
+                stats.weeklyStreak > 0 ? "text-gold" : "text-mist-dim",
+              )}
+              title={`Weekly streak: ${stats.weeklyStreak} week${stats.weeklyStreak === 1 ? "" : "s"} with 2 h+ logged`}
+            >
+              <Flame className="h-4 w-4" strokeWidth={1.8} />
+              <span>{stats.weeklyStreak}w</span>
+            </div>
+
+            <div
+              className="flex items-center gap-2"
+              title={`${stats.totalXp.toLocaleString("en")} XP · next level at ${stats.nextLevelAt.toLocaleString("en")}`}
+            >
+              {/* The number sits in the same box as the ring: the rotated SVG would otherwise paint over it. */}
+              <div className="relative grid h-9 w-9 shrink-0 place-items-center">
+                <svg viewBox="0 0 36 36" className="absolute inset-0 h-9 w-9 -rotate-90" aria-hidden>
+                  <circle cx="18" cy="18" r="15" fill="var(--ink-800)" stroke="var(--ink-600)" strokeWidth="2.5" />
+                  <circle
+                    cx="18"
+                    cy="18"
+                    r="15"
+                    fill="none"
+                    stroke="var(--gold)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeDasharray={`${ring * stats.progressToNext} ${ring}`}
+                    className="drop-shadow-[0_0_4px_var(--gold)]"
+                  />
+                </svg>
+                <span className="relative font-display text-[14px] font-semibold leading-none text-gold-bright">
+                  <span className="sr-only">Level </span>
+                  {stats.level}
+                </span>
+              </div>
+              <div className="hidden leading-tight lg:block">
+                <div className="hud-label !text-[9.5px]">Level</div>
+                <div className="font-mono text-[11.5px] text-parchment-dim">
+                  {stats.totalXp.toLocaleString("en")} XP
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </header>
   );

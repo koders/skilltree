@@ -36,6 +36,13 @@ export const STREAK_MIN_MINUTES_PER_WEEK = 120;
 /** Default minutes for the "answer Recall" step the quest plan adds after each skill. */
 export const RECALL_STEP_MINUTES = 15;
 
+/**
+ * Largest progress file (in chars) the Data page imports. next.config.ts sizes
+ * the Server Action body limit from it; bigger files go through
+ * `pnpm progress:import`.
+ */
+export const IMPORT_MAX_CHARS = 20_000_000;
+
 /** Leitner intervals in days for boxes 1..n (future spaced review, guide §7). */
 export const LEITNER_INTERVALS_DAYS = [1, 3, 7, 14, 30, 60] as const;
 

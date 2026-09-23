@@ -21,7 +21,7 @@
   --parchment: #ece6d6;
   --parchment-dim: #b9b3a3;
   --mist: #8b93a7;
-  --mist-dim: #5d6680;
+  --mist-dim: #7a839b; /* ≥ 4.5:1 on ink-800…900 and panels (WCAG AA for the small text it carries) */
 
   /* accents */
   --gold: #e9c46a;

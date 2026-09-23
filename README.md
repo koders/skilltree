@@ -34,7 +34,19 @@ pnpm dev                     # http://localhost:3000
 | `SUPABASE_SECRET_KEY` | Dashboard → Project Settings → API keys → secret key (`sb_secret_…`). Server-side only. |
 | `SUPABASE_DB_URL` | Dashboard → Connect → **Session pooler** URI. The direct `db.<ref>.supabase.co` host is IPv6-only. Only migrations use this. |
 
-There's no login. The app runs locally (see [docs/decisions.md](docs/decisions.md) D2 for how to add a gate before deploying).
+There's no login by default, so the app only answers on this machine: the dev server binds to `127.0.0.1`, and `src/proxy.ts` refuses other host names.
+
+## Deploy (Vercel)
+
+1. Import `koders/skilltree` into Vercel. The framework preset (Next.js) and the default build command are fine.
+2. Set these environment variables:
+   - `SUPABASE_PROJECT_URL`
+   - `SUPABASE_SECRET_KEY`
+   - `APP_PASSWORD`: a long passphrase. Setting it switches the app from local-only to the passphrase gate (see [decisions D2](docs/decisions.md)).
+   - `SUPABASE_DB_URL` isn't needed at runtime; only `pnpm db:migrate` uses it.
+3. Deploy, open the URL and unlock with the passphrase. The session cookie lasts 30 days per device. Changing `APP_PASSWORD` logs out every device.
+
+Content is read from `content/` at request time (it's included in the deploy via `outputFileTracingIncludes`), so pushing a content change to `main` redeploys the tree.
 
 ## How it's organised
 
@@ -48,6 +60,7 @@ docs/
   skill-authoring-guide.md   content standard (what a good skill looks like)
   format-spec.md             storage format (how content is written down)
   decisions.md               architecture decisions and what was rejected
+seed/                        the original seed bundle, frozen (tests use it as a fixture)
 supabase/migrations/         progress schema (SQL)
 src/lib/content/             parser, serializer, validator
 src/lib/engine/              pure derived state: node states, rust, XP, quest week plan, habits

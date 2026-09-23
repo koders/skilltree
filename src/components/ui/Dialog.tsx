@@ -4,7 +4,13 @@ import clsx from "clsx";
 import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
 
-/** Native <dialog> modal with the atlas look. Controlled by `open`. */
+/**
+ * Native <dialog> modal with the atlas look. Controlled by `open`.
+ *
+ * Children mount while the <dialog> is still closed, so React's `autoFocus`
+ * misses on first open and showModal() then focuses the Close button. Mark
+ * the field that should take focus with `data-autofocus` instead.
+ */
 export function Dialog({
   open,
   onClose,
@@ -25,7 +31,10 @@ export function Dialog({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (open && !el.open) el.showModal();
+    if (open && !el.open) {
+      el.showModal();
+      el.querySelector<HTMLElement>("[data-autofocus]")?.focus();
+    }
     if (!open && el.open) el.close();
   }, [open]);
 

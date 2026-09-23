@@ -192,13 +192,17 @@ function buildSkillView(
   for (const rank of skill.ranks) {
     const views = rank.items.map((item) => skillItemView(skill.id, item, p, freshness[item.id]));
     itemViews.push(...views);
-    const r = buildRankView(rank, views, learned.learned, unlearned);
+    const r = buildRankView(rank, views, learned, unlearned);
     ranks.push(r.view);
     blockingMinutes += r.blockingMinutes;
     clearedMinutes += r.clearedMinutes;
   }
 
-  const missingRequires = unlearned(skill.requires);
+  // A rank's requires lock just that rank (D6), but a skill whose every rank is locked
+  // has nothing to work on: it's locked too, until its first rank opens.
+  const allRanksLocked = ranks.length > 0 && ranks.every((r) => r.locked);
+  const ownMissing = unlearned(skill.requires);
+  const missingRequires = ownMissing.length > 0 || !allRanksLocked ? ownMissing : ranks[0].missingRequires;
   const locked = !learned.learned && missingRequires.length > 0;
   const started =
     itemViews.some((v) => v.status !== "todo") || logs.length > 0 || Boolean(row?.startedAt);
@@ -221,8 +225,12 @@ function buildSkillView(
     progress: learned.learned ? 1 : blockingMinutes > 0 ? clearedMinutes / blockingMinutes : allRanksComplete ? 1 : 0,
     // A rank's requires are prerequisites of the skill as a whole (validator: cycle, quest-order).
     readyToComplete: !learned.learned && !locked && allRanksComplete && ranks.every((r) => !r.locked),
+    // A test-out clears every rank, so it waits for the same prerequisites as the completion check.
     canTestOut:
-      !locked && (!learned.learned || learned.learnedVia === "self-reported") && skill.recall.length > 0,
+      !locked &&
+      ranks.every((r) => !r.locked) &&
+      (!learned.learned || learned.learnedVia === "self-reported") &&
+      skill.recall.length > 0,
     rust,
     minutesLogged: logs.reduce((sum, l) => sum + (Number.isFinite(l.minutes) && l.minutes > 0 ? l.minutes : 0), 0),
     xp: logs.reduce((sum, l) => sum + xpForLog(l.activity, l.minutes), 0) + recallBonusFor(attempts),
@@ -252,9 +260,13 @@ function skillState(learned: Learned, isRusty: boolean, locked: boolean, started
 function buildRankView(
   rank: Rank,
   views: ItemView[],
-  skillLearned: boolean,
+  learned: Learned,
   unlearned: (ids: string[]) => string[],
 ): { view: RankView; blockingMinutes: number; clearedMinutes: number } {
+  const skillLearned = learned.learned;
+  // A test-out or self-report clears every item without marking it done (the item stays
+  // todo so it can still be worked through); count those as cleared too.
+  const covered = learned.learned && learned.learnedVia !== "completed";
   let blockingCount = 0;
   let doneCount = 0;
   let blockingMinutes = 0;
@@ -264,7 +276,7 @@ function buildRankView(
     const minutes = weightMinutes(item.minutes);
     blockingCount += 1;
     blockingMinutes += minutes;
-    if (views[i].status !== "todo") {
+    if (covered || views[i].status !== "todo") {
       doneCount += 1;
       clearedMinutes += minutes;
     }
@@ -339,10 +351,13 @@ function questItemView(questId: string, item: Item, p: ProgressIndex, fresh: Ite
   };
 }
 
-function freshnessFields(fresh: ItemFreshness | undefined): Pick<ItemView, "asOf" | "lastVerifiedAt" | "staleOn" | "stale"> {
+function freshnessFields(
+  fresh: ItemFreshness | undefined,
+): Pick<ItemView, "asOf" | "lastVerifiedAt" | "changedOn" | "staleOn" | "stale"> {
   return {
     asOf: fresh?.asOf ?? null,
     lastVerifiedAt: fresh?.lastVerifiedAt ?? null,
+    changedOn: fresh?.changedOn ?? null,
     staleOn: fresh?.staleOn ?? null,
     stale: fresh?.stale ?? false,
   };

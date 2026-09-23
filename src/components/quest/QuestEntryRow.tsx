@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { Brain, Check, Lock, Minus, RotateCcw, SkipForward } from "lucide-react";
 import { useOptimistic, useRef, useState } from "react";
 import { setItemStatus } from "@/app/actions";
+import { remainingMinutes } from "@/components/skill/format";
 import { RecallDialog } from "@/components/skill/RecallDialog";
 import { Button } from "@/components/ui/Button";
 import { formatMinutesShort, itemTypeMeta } from "@/components/ui/meta";
@@ -30,6 +31,8 @@ export interface QuestEntryRowProps {
   recallCredited?: string[];
   /** Its skill is already learned: entries show as cleared and can't be undone here. */
   skillLearned: boolean;
+  /** Minutes already logged on the item (sessions from the skill panel or journal). */
+  minutesLogged?: number;
   isNext?: boolean;
   /** DOM id, so the "Next up" link can jump to the row. */
   anchorId?: string;
@@ -47,13 +50,16 @@ export function QuestEntryRow({
   recallSkill,
   recallCredited,
   skillLearned,
+  minutesLogged = 0,
   isNext,
   anchorId,
 }: QuestEntryRowProps) {
   const { run, pending } = useAction();
   const [status, setOptimisticStatus] = useOptimistic<ItemStatus>(entry.status);
   const [logging, setLogging] = useState(false);
-  const [minutes, setMinutes] = useState(String(entry.minutes));
+  // What's left of the estimate: time already logged on the item isn't counted twice.
+  const prefill = String(remainingMinutes(entry.minutes, minutesLogged) ?? "");
+  const [minutes, setMinutes] = useState(prefill);
   const [celebrate, setCelebrate] = useState(false);
   const [recallOpen, setRecallOpen] = useState(false);
   const doneRef = useRef<HTMLButtonElement>(null);
@@ -68,6 +74,8 @@ export function QuestEntryRow({
   const parsedMinutes = Math.round(Number(minutes));
   const validMinutes = Number.isFinite(parsedMinutes) && parsedMinutes >= 1 && parsedMinutes <= 1440;
   const previewXp = validMinutes ? xpForLog(activity, parsedMinutes) : 0;
+  // With sessions already logged, finishing usually adds nothing: make that the easy path.
+  const noTimeFirst = minutesLogged > 0 && !validMinutes;
 
   function write(next: ItemStatus, logMinutes: number) {
     if (entry.itemId === null) return;
@@ -254,7 +262,7 @@ export function QuestEntryRow({
               size="sm"
               disabled={locked || pending}
               onClick={() => {
-                setMinutes(String(entry.minutes));
+                setMinutes(prefill);
                 setLogging(true);
               }}
               aria-label={`Mark done: ${plainTitle}`}
@@ -274,7 +282,8 @@ export function QuestEntryRow({
           className="col-span-2 col-start-1 flex flex-wrap items-center gap-2 rounded-lg border border-gold/25 bg-ink-850/80 px-3 py-2.5 sm:col-span-2 sm:col-start-2"
           onSubmit={(e) => {
             e.preventDefault();
-            complete(true);
+            if (noTimeFirst && !minutes.trim()) complete(false);
+            else complete(true);
           }}
           onKeyDown={(e) => {
             if (e.key === "Escape") {
@@ -300,16 +309,22 @@ export function QuestEntryRow({
             <span className="font-mono text-[12px] text-mist">min</span>
           </label>
           <span id={`xp-${entry.key}`} className="font-mono text-[12px] text-gold" aria-live="polite">
-            {validMinutes ? `+${previewXp} XP` : "1–1440 min"}
+            {validMinutes ? `+${previewXp} XP` : minutesLogged > 0 ? "" : "1–1440 min"}
           </span>
+          {minutesLogged > 0 ? (
+            <span className="w-full font-mono text-[11px] text-mist sm:order-last">
+              {formatMinutesShort(minutesLogged)} already logged on this item
+            </span>
+          ) : null}
           <div className="ml-auto flex flex-wrap items-center gap-1.5">
             <Button type="button" variant="ghost" size="sm" onClick={cancelLogging}>
               Cancel
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => complete(false)}>
+            <Button type="button" variant={noTimeFirst ? "gold" : "ghost"} size="sm" onClick={() => complete(false)}>
+              {noTimeFirst ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> : null}
               Done, no time
             </Button>
-            <Button type="submit" variant="gold" size="sm" disabled={!validMinutes}>
+            <Button type="submit" variant={noTimeFirst ? "secondary" : "gold"} size="sm" disabled={!validMinutes}>
               <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
               Log &amp; complete
             </Button>

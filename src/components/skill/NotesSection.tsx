@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { ExternalLink, Gem, NotebookPen, Pencil, Plus, Trash2 } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { deleteNote, saveNote } from "@/app/actions";
 import { Button } from "@/components/ui/Button";
 import { Markdown } from "@/components/ui/Markdown";
@@ -176,15 +176,19 @@ export function NoteForm({
   const ids = useId();
   const loot = kind === "output";
   const empty = !title.trim() && !url.trim() && !body.trim();
+  // ⌘↵ bypasses the disabled submit button; a second press before the first save
+  // lands (or key repeat) would insert the note twice.
+  const saving = useRef(false);
 
   const submit = () => {
-    if (empty) return;
+    if (empty || pending || saving.current) return;
     const trimmedUrl = url.trim();
     if (trimmedUrl && !/^https?:\/\/\S+$/i.test(trimmedUrl)) {
       setError("Links need to start with http:// or https://");
       return;
     }
     setError(null);
+    saving.current = true;
     void run(
       () =>
         saveNote({
@@ -198,6 +202,7 @@ export function NoteForm({
         }),
       { success: note ? "Saved" : loot ? "Loot attached" : "Note saved" },
     ).then((r) => {
+      saving.current = false;
       if (r.ok) onDone();
     });
   };
@@ -279,7 +284,7 @@ export function NoteForm({
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
-              submit();
+              if (!e.repeat) submit();
             }
           }}
           rows={loot ? 3 : 4}

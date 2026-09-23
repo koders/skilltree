@@ -10,7 +10,7 @@ import { buildExport, PROGRESS_EXPORT_FORMAT } from "@/lib/progress/export";
 import { EMPTY_SNAPSHOT, type ProgressSnapshot } from "@/lib/progress/types";
 
 type Row = Record<string, unknown>;
-type Result = { data: Row[] | null; error: { message: string } | null };
+type Result = { data: Row[] | null; error: { message: string; code?: string } | null };
 
 class FakeDb {
   tables = new Map<string, Row[]>();
@@ -99,7 +99,17 @@ class FakeQuery implements PromiseLike<Result> {
       case "upsert": {
         const key = (r: Row) => this.conflict.map((c) => String(r[c])).join("|");
         const byKey = new Map(rows.map((r) => [key(r), r]));
-        for (const r of this.payload) byKey.set(key(r), { ...byKey.get(key(r)), ...r });
+        for (const r of this.payload) {
+          byKey.set(key(r), { ...byKey.get(key(r)), ...r });
+          // Postgres checks quest_runs_one_active_idx (a partial unique index) row by row, not per statement.
+          const active = [...byKey.values()].filter((x) => x.status === "active").length;
+          if (this.table === "quest_runs" && active > 1) {
+            return {
+              data: null,
+              error: { code: "23505", message: 'duplicate key value violates unique constraint "quest_runs_one_active_idx"' },
+            };
+          }
+        }
         this.db.tables.set(this.table, [...byKey.values()]);
         return { data: null, error: null };
       }
@@ -189,6 +199,30 @@ describe("importProgress", () => {
     expect(counts.items).toEqual({ inserted: 1, updated: 1, unchanged: 0, deleted: 0 });
     expect(fake.rows("item_progress").map((r) => `${String(r.item_id)}:${String(r.status)}`).sort()).toEqual(["new:done", "one:skipped"]);
     expect(fake.rows("habit_logs")).toHaveLength(1);
+  });
+
+  it("merge: swaps which quest run is active without tripping the one-active index, whatever the id order", async () => {
+    const run = (n: number, status: "active" | "paused") => ({
+      id: uuid(n),
+      questId: `quest-${n}`,
+      status,
+      startedOn: "2026-09-21",
+      hoursPerWeek: null,
+      forkedFrom: null,
+      definition: null,
+      createdAt: "2026-09-21T08:00:00.000Z",
+      updatedAt: "2026-09-21T08:00:00.000Z",
+    });
+    const fake = new FakeDb();
+    // Now: run 11 paused, run 12 active. The file (an older export, sorted by id) has them the other way round.
+    fake.load({ ...EMPTY_SNAPSHOT, questRuns: [run(11, "paused"), run(12, "active")] });
+    const file = JSON.stringify(buildExport({ ...EMPTY_SNAPSHOT, questRuns: [run(11, "active"), run(12, "paused")] }, "2026-09-23T12:00:00Z"));
+    const counts = await importProgress(fake as unknown as SupabaseClient, { json: file, mode: "merge" });
+    expect(counts.questRuns).toMatchObject({ updated: 2 });
+    expect(fake.rows("quest_runs").map((r) => `${String(r.quest_id)}:${String(r.status)}`).sort()).toEqual([
+      "quest-11:active",
+      "quest-12:paused",
+    ]);
   });
 
   it("rejects an invalid file before reading the database", async () => {

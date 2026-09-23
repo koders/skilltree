@@ -7,6 +7,7 @@ import {
   logTimeSchema,
   nextRecallCard,
   questStartMonday,
+  recallBlockedReason,
   saveNoteSchema,
   setItemStatusSchema,
   submitRecallSchema,
@@ -144,5 +145,26 @@ describe("input schemas", () => {
     expect(updateQuestRunSchema.safeParse({ runId, hoursPerWeek: null }).success).toBe(true);
     expect(updateQuestRunSchema.safeParse({ runId, startedOn: "2026-09-23" }).success).toBe(true);
     expect(updateQuestRunSchema.safeParse({ runId: "nope", startedOn: "2026-09-23" }).success).toBe(false);
+  });
+});
+
+describe("recallBlockedReason (server-side gate for test-outs and completion checks)", () => {
+  const view = { learned: false, locked: false, readyToComplete: false, canTestOut: true };
+
+  it("lets a completion check through only when the skill is ready to complete", () => {
+    expect(recallBlockedReason({ ...view, readyToComplete: true }, "complete")).toBeNull();
+    // e.g. an item was undone in another tab while the answers were being written
+    expect(recallBlockedReason(view, "complete")).toMatch(/rank/i);
+  });
+
+  it("lets a test-out through only when the skill can be tested out of", () => {
+    expect(recallBlockedReason(view, "test-out")).toBeNull();
+    expect(recallBlockedReason({ ...view, locked: true, canTestOut: false }, "test-out")).toMatch(/locked/i);
+    expect(recallBlockedReason({ ...view, learned: true, canTestOut: false }, "test-out")).toMatch(/already learned/i);
+    expect(recallBlockedReason({ ...view, canTestOut: false }, "test-out")).toMatch(/prerequisites/i);
+  });
+
+  it("never blocks a review", () => {
+    expect(recallBlockedReason({ ...view, canTestOut: false, locked: true }, "review")).toBeNull();
   });
 });

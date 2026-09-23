@@ -23,7 +23,7 @@ import { xpForLog } from "@/lib/engine/xp";
 import type { ItemView } from "@/lib/engine/types";
 import type { ItemStatus } from "@/lib/progress/types";
 import { usePanel } from "./context";
-import { formatDay, parseMinutes, relativeDays } from "./format";
+import { formatDay, parseMinutes, relativeDays, remainingMinutes } from "./format";
 import { ItemDetails } from "./ItemDetails";
 import { escapeHandler, Tag } from "./parts";
 import styles from "./skill.module.css";
@@ -235,6 +235,7 @@ export function ItemRow(props: ItemRowProps) {
         {completing && status === "todo" && (
           <CompleteForm
             item={item}
+            logged={itemView?.minutesLogged ?? 0}
             onCancel={() => {
               setCompleting(false);
               nodeRef.current?.focus();
@@ -344,18 +345,23 @@ function StatusNode({
 /** "Time spent [45] min · Log & complete / Just complete" */
 function CompleteForm({
   item,
+  logged,
   onCancel,
   onComplete,
 }: {
   item: Item;
+  /** Minutes already logged on the item; the prefill is what's left of the estimate. */
+  logged: number;
   onCancel: () => void;
   onComplete: (minutes?: number) => void;
 }) {
-  const [value, setValue] = useState(item.minutes != null ? String(item.minutes) : "");
+  const [value, setValue] = useState(() => String(remainingMinutes(item.minutes, logged) ?? ""));
   const inputId = useId();
   const minutes = parseMinutes(value);
   const activity = item.type && item.type !== "habit" ? item.type : "other";
   const xp = minutes ? xpForLog(activity, minutes) : 0;
+  // With sessions already logged, finishing usually adds nothing: make that the easy path.
+  const justCompleteFirst = logged > 0 && !minutes;
 
   return (
     <div
@@ -376,9 +382,13 @@ function CompleteForm({
           autoFocus
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && minutes) {
+            if (e.key !== "Enter") return;
+            if (minutes) {
               e.preventDefault();
               onComplete(minutes);
+            } else if (justCompleteFirst && !value.trim()) {
+              e.preventDefault();
+              onComplete();
             }
           }}
           className="h-7 w-[4.25rem] rounded-md border border-ink-500 bg-ink-850 px-2 text-right font-mono text-[13px] text-parchment [appearance:textfield] focus:border-gold/60 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -386,12 +396,17 @@ function CompleteForm({
         <span className="font-mono text-[12px] text-mist">min</span>
         {xp > 0 && <span className="ml-auto font-mono text-[11.5px] text-gold">+{xp} XP</span>}
       </div>
+      {logged > 0 && (
+        <p className="mt-1.5 font-mono text-[11px] text-mist">
+          {formatMinutesShort(logged)} already logged on this item{minutes ? "; the time above is added to it" : ""}
+        </p>
+      )}
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-        <Button size="sm" variant="gold" disabled={!minutes} onClick={() => minutes && onComplete(minutes)}>
+        <Button size="sm" variant={justCompleteFirst ? "secondary" : "gold"} disabled={!minutes} onClick={() => minutes && onComplete(minutes)}>
           <Check className="h-3.5 w-3.5" strokeWidth={2.6} />
           Log &amp; complete
         </Button>
-        <Button size="sm" variant="secondary" onClick={() => onComplete()}>
+        <Button size="sm" variant={justCompleteFirst ? "gold" : "secondary"} onClick={() => onComplete()}>
           Just complete
         </Button>
         <Button size="sm" variant="ghost" className="ml-auto" onClick={onCancel}>

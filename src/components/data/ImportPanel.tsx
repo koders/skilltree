@@ -7,28 +7,12 @@ import { importProgress } from "@/app/actions";
 import { fieldClass } from "@/components/journal/styles";
 import { Button } from "@/components/ui/Button";
 import { useAction } from "@/components/ui/useAction";
-import type { ImportCounts, SnapshotTable } from "@/lib/progress/export";
+import { IMPORT_MAX_CHARS } from "@/lib/config";
+import type { ImportCounts } from "@/lib/progress/export";
+import { previewImport } from "./import-preview";
 import { TABLE_LABELS, TABLE_ORDER } from "./tables";
 
 type Mode = "merge" | "replace";
-
-/** A quick look at pasted JSON before it's sent: parse errors and rows per table. */
-function preview(json: string): { error: string | null; tables: [SnapshotTable, number][] } | null {
-  if (!json.trim()) return null;
-  let raw: unknown;
-  try {
-    raw = JSON.parse(json);
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : "Not valid JSON", tables: [] };
-  }
-  const data = (raw as { data?: unknown } | null)?.data;
-  if (!data || typeof data !== "object") return { error: "Expected { format, version, data: { … } }", tables: [] };
-  const tables = TABLE_ORDER.flatMap((t): [SnapshotTable, number][] => {
-    const rows = (data as Record<string, unknown>)[t];
-    return Array.isArray(rows) ? [[t, rows.length]] : [];
-  });
-  return { error: null, tables };
-}
 
 export function ImportPanel() {
   const id = useId();
@@ -40,9 +24,10 @@ export function ImportPanel() {
   const [confirm, setConfirm] = useState("");
   const [result, setResult] = useState<{ ok: true; counts: ImportCounts } | { ok: false; error: string } | null>(null);
 
-  const look = preview(json);
+  const look = previewImport(json);
+  const payload = look?.payload ?? null;
   const armed = mode === "merge" || confirm === "REPLACE";
-  const canSubmit = Boolean(look && !look.error) && armed && !pending;
+  const canSubmit = payload !== null && armed && !pending;
 
   const loadFile = async (file: File | undefined) => {
     if (!file) return;
@@ -52,7 +37,8 @@ export function ImportPanel() {
   };
 
   const submit = () => {
-    void run(() => importProgress({ json, mode }), { success: "Progress imported" }).then((r) => {
+    if (payload === null) return;
+    void run(() => importProgress({ json: payload, mode }), { success: "Progress imported" }).then((r) => {
       setResult(r.ok ? { ok: true, counts: r.data } : { ok: false, error: r.error });
       if (r.ok) setConfirm("");
     });
@@ -87,7 +73,7 @@ export function ImportPanel() {
 
       <div>
         <label htmlFor={`${id}-json`} className="hud-label mb-1.5 block">
-          JSON
+          JSON <span className="normal-case tracking-normal text-mist">· up to {IMPORT_MAX_CHARS / 1_000_000} MB</span>
         </label>
         <textarea
           id={`${id}-json`}

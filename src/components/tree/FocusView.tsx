@@ -10,7 +10,7 @@ import { RankPips, StateBadge, TypeBadge } from "@/components/ui/Badges";
 import { formatMinutesShort } from "@/components/ui/meta";
 import { ProgressBar } from "@/components/ui/Progress";
 import type { TreeData } from "@/lib/view-model";
-import { estimateLabel, matchesQuery, openBlockingItems, plainText, type SkillMeta, type TreeModel } from "./model";
+import { estimateLabel, lockedRankNote, matchesQuery, openBlockingItems, plainText, type SkillMeta, type TreeModel } from "./model";
 import { NEUTRAL_ORB, OrbArt } from "./Orb";
 
 type SectionId = "quest" | "ready" | "progress" | "rusty" | "available" | "starred";
@@ -163,6 +163,8 @@ function FocusCard({
   const shown = open.slice(0, MAX_ITEMS);
   const more = open.length - shown.length;
   const quest = model.questSkillIds.has(skill.id);
+  // A rank waiting on another skill (Market Intelligence's Rank 2): say so rather than leave the card empty.
+  const rankNote = lockedRankNote(view, titleOf);
   const select = () => onSelect(skill.id);
   const itemBtn =
     "group/item grid w-full grid-cols-[30px_76px_minmax(0,1fr)_auto] items-center gap-x-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-ink-700/50 max-sm:grid-cols-[30px_minmax(0,1fr)_auto]";
@@ -303,6 +305,12 @@ function FocusCard({
               >
                 + {more} more item{more === 1 ? "" : "s"}
               </button>
+            )}
+            {rankNote && (
+              <div className="flex items-center gap-2.5 px-2 py-2 text-[13px] text-mist">
+                <Lock className="h-3.5 w-3.5 shrink-0" />
+                {rankNote}
+              </div>
             )}
             {view.learned && section === "starred" && (
               <div className="px-2 py-2 text-[13px] text-mist">Learned. Nothing left to do.</div>

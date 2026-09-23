@@ -71,10 +71,16 @@ function Callout({
 }
 
 function LockedCallout() {
-  const { view } = usePanel();
+  const { skill, view } = usePanel();
+  // Locked by its ranks alone (each needs another skill), not by the skill's own requires.
+  const byRanks = !view.missingRequires.some((id) => skill.requires.includes(id));
   return (
     <Callout accent="var(--ink-400)" icon={<Lock className="h-4 w-4" strokeWidth={2} />} title="Locked">
-      <p className="mt-1 text-[13px] text-parchment-dim">Learn {view.missingRequires.length === 1 ? "this" : "these"} first:</p>
+      <p className="mt-1 text-[13px] text-parchment-dim">
+        {byRanks
+          ? `Every rank needs another skill first. Rank ${view.ranks.find((r) => r.locked)?.number ?? 1} opens after:`
+          : `Learn ${view.missingRequires.length === 1 ? "this" : "these"} first:`}
+      </p>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {view.missingRequires.map((id) => (
           <SkillChip key={id} skillId={id} />

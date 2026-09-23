@@ -444,8 +444,9 @@ const EMPTY_XP: XpSummary = {
 
 /**
  * A plausible TreeState following state.ts's rules: skill/rank locks from
- * unlearned known requires (never on a learned skill), rank completion from
- * blocking items, readyToComplete when unlocked with every rank complete.
+ * unlearned known requires (never on a learned skill; every rank locked locks
+ * the skill), rank completion from blocking items, readyToComplete when
+ * unlocked with every rank complete and unlocked.
  * quest.test.ts checks it against computeTreeState on the seed.
  */
 export function makeTree(index: ContentIndex, today: string, progress: FixtureProgress = {}): TreeState {
@@ -479,7 +480,10 @@ export function makeTree(index: ContentIndex, today: string, progress: FixturePr
         progress: learned ? 1 : blocking.length > 0 ? cleared.length / blocking.length : 1,
       };
     });
-    const missingRequires = unlearned(skill.requires);
+    // Every rank locked locks the skill too, naming the first rank's requires.
+    const ownMissing = unlearned(skill.requires);
+    const allRanksLocked = ranks.length > 0 && ranks.every((rv) => rv.locked);
+    const missingRequires = ownMissing.length > 0 || !allRanksLocked ? ownMissing : ranks[0].missingRequires;
     const locked = !learned && missingRequires.length > 0;
     const started = skill.ranks.some((rank) => rank.items.some((it) => progress.items?.[it.key] !== undefined));
     const ranksComplete = ranks.filter((rv) => rv.complete).length;
@@ -496,8 +500,8 @@ export function makeTree(index: ContentIndex, today: string, progress: FixturePr
       ranks,
       ranksComplete,
       progress: learned ? 1 : ranks.length > 0 ? ranksComplete / ranks.length : 0,
-      readyToComplete: !learned && !locked && ranks.length > 0 && ranks.every((rv) => rv.complete),
-      canTestOut: !locked && !learned && skill.recall.length > 0,
+      readyToComplete: !learned && !locked && ranks.length > 0 && ranks.every((rv) => rv.complete && !rv.locked),
+      canTestOut: !locked && ranks.every((rv) => !rv.locked) && !learned && skill.recall.length > 0,
       rust: { stale: [], failedReview: false, isRusty: false, nextStaleOn: null },
       minutesLogged: 0,
       xp: 0,
@@ -529,6 +533,7 @@ function itemView(item: Item, status: StoredItemStatus | undefined, today: strin
     blocking: !item.optional && item.type !== "habit",
     asOf: null,
     lastVerifiedAt: null,
+    changedOn: null,
     staleOn: null,
     stale: false,
     noteCount: 0,

@@ -152,6 +152,19 @@ describe("computeTreeState: ranks and progress", () => {
     expect(rank2).toMatchObject({ locked: false, complete: true, progress: 1 });
   });
 
+  it("counts items a test-out or self-report covered as cleared, so a complete rank never reads 0/n", () => {
+    const tested = tree({ skills: [learnedRow("a.basics", "tested-out", "2026-09-22T10:00:00Z")] }).skills["a.basics"];
+    expect(tested.ranks.map((r) => [r.doneCount, r.blockingCount])).toEqual(tested.ranks.map((r) => [r.blockingCount, r.blockingCount]));
+    const known = tree({ skills: [learnedRow("a.basics", "self-reported")] }).skills["a.basics"];
+    expect(known.ranks[0]).toMatchObject({ doneCount: 2, blockingCount: 2 });
+    // A completed skill's items were really done; one undone afterwards shows as open again.
+    const completed = tree({
+      skills: [learnedRow("a.basics", "completed", "2026-09-22T10:00:00Z")],
+      items: [itemRow("a.basics", "read-intro")],
+    }).skills["a.basics"];
+    expect(completed.ranks[0]).toMatchObject({ doneCount: 1, blockingCount: 2, complete: true });
+  });
+
   it("counts only blocking items and weights progress by estimated minutes", () => {
     // Rank 1 blocking: read-intro 60 + do-exercise 30 (optional book and habit excluded).
     const t = tree({ items: [itemRow("a.basics", "read-intro"), itemRow("a.basics", "opt-book")] });
@@ -224,10 +237,33 @@ describe("computeTreeState: ranks and progress", () => {
 
 describe("computeTreeState: test-out", () => {
   it("allows testing out of unlocked, unlearned skills with Recall", () => {
-    const t = tree();
+    const t = tree({ skills: [learnedRow("b.bridge", "completed")] });
     expect(t.skills["a.basics"].canTestOut).toBe(true);
     expect(t.skills["a.advanced"].canTestOut).toBe(false); // locked
     expect(t.skills["b.empty"].canTestOut).toBe(false); // no Recall
+  });
+
+  it("waits for every rank's requires, like the completion check (a test-out clears every rank)", () => {
+    // a.basics rank 2 requires the unlearned b.bridge.
+    expect(tree().skills["a.basics"]).toMatchObject({ state: "available", locked: false, canTestOut: false });
+  });
+
+  it("locks a skill whose every rank is locked, naming the first rank's requires", () => {
+    const skill = makeSkill({
+      id: "c.ranked",
+      recall: ["q1"],
+      ranks: [
+        { requires: ["a.basics"], items: [{ id: "one" }] },
+        { requires: ["b.bridge"], items: [{ id: "two" }] },
+      ],
+    });
+    const index = makeIndex({ skills: [...sampleSkills(), skill] });
+    const view = (snapshot: Parameters<typeof makeSnapshot>[0] = {}) => computeTreeState(index, makeSnapshot(snapshot), TODAY).skills["c.ranked"];
+    expect(view()).toMatchObject({ state: "locked", locked: true, missingRequires: ["a.basics"], canTestOut: false, readyToComplete: false });
+    // Either rank opening makes it workable.
+    expect(view({ skills: [learnedRow("b.bridge", "completed")] })).toMatchObject({ state: "available", locked: false, missingRequires: [] });
+    // Learned skills are never locked.
+    expect(view({ skills: [learnedRow("c.ranked", "self-reported")] })).toMatchObject({ locked: false, state: "self-reported" });
   });
 
   it("allows upgrading a self-reported skill, but not other learned routes", () => {
@@ -297,6 +333,7 @@ describe("computeTreeState: items", () => {
       blocking: true,
       asOf: null,
       lastVerifiedAt: null,
+      changedOn: null,
       staleOn: null,
       stale: false,
       noteCount: 1,

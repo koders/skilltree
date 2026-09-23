@@ -16,6 +16,7 @@ import {
   itemRow,
   learnedRow,
   makeSnapshot,
+  skillRow,
   testOutSession,
   timeLog,
   verification,
@@ -85,8 +86,8 @@ describe("seed: test out of consensus", () => {
       xp: 30,
       lastActivityAt: createdAt,
     });
-    // A test-out clears the ranks without touching item rows.
-    expect(t.skills[CONSENSUS].ranks[0]).toMatchObject({ complete: true, doneCount: 0, blockingCount: 1 });
+    // A test-out clears the ranks without touching item rows (the rank counts its item as covered).
+    expect(t.skills[CONSENSUS].ranks[0]).toMatchObject({ complete: true, doneCount: 1, blockingCount: 1 });
     expect(t.items[`${CONSENSUS}/roughgarden-foundations`].status).toBe("todo");
 
     expect(t.skills[ETH]).toMatchObject({ state: "available", locked: false, missingRequires: [], canTestOut: true });
@@ -134,8 +135,9 @@ describe("seed: the whole bundle through the engine", () => {
     const t = run();
     const byState = (state: string) => Object.values(t.skills).filter((s) => s.state === state).map((s) => s.id).sort();
     expect(byState("self-reported")).toEqual(["swe.claude-code", "swe.graphql", "swe.nextjs", "swe.react", "swe.web3-frontend"]);
-    expect(byState("available")).toEqual(["crypto.consensus", "finance.market-intelligence", "finance.money-settlement"]);
-    expect(byState("locked")).toHaveLength(24 - 5 - 3);
+    // Market Intelligence requires nothing itself, but both its ranks do: nothing in it is workable yet.
+    expect(byState("available")).toEqual(["crypto.consensus", "finance.money-settlement"]);
+    expect(byState("locked")).toHaveLength(24 - 5 - 2);
     expect(Object.fromEntries(Object.values(t.branches).map((b) => [b.id, b.total]))).toEqual({ swe: 5, finance: 6, crypto: 13 });
     expect(t.branches.swe).toMatchObject({ learned: 5, progress: 1 });
   });
@@ -166,6 +168,12 @@ describe("seed: the whole bundle through the engine", () => {
     expect(t.items[facts[0].key]).toMatchObject({ asOf: "2026-12-22", lastVerifiedAt: "2026-12-22", staleOn: "2027-03-22" });
     // A learned skill is never locked, even with its own requires still unlearned.
     expect(t.skills[cosmos]).toMatchObject({ locked: false, missingRequires: ["crypto.consensus", "crypto.staking-metrics"] });
+
+    // "It changed" means the content is now wrong: the skill stays rusty until the file is fixed.
+    const changed = facts.map((f) => verification(cosmos, f.id, "2026-12-23T08:00:00Z", true));
+    const c = run({ skills: learned, verifications: changed }, "2026-12-23");
+    expect(c.skills[cosmos].state).toBe("rusty");
+    expect(c.items[facts[0].key]).toMatchObject({ stale: true, changedOn: "2026-12-23", staleOn: "2026-12-22" });
   });
 
   it("gates Market Intelligence rank by rank, and only completes it once both ranks unlock", () => {
@@ -173,7 +181,7 @@ describe("seed: the whole bundle through the engine", () => {
     const allDone = skillItems(mi).filter((i) => i.type !== "habit" && !i.optional).map((i) => itemRow(mi, i.id));
     const locked = run({ items: allDone }).skills[mi];
     expect(locked.ranks.map((r) => r.missingRequires)).toEqual([["crypto.staking-metrics"], ["finance.market-structure"]]);
-    expect(locked).toMatchObject({ state: "in-progress", ranksComplete: 2, readyToComplete: false });
+    expect(locked).toMatchObject({ ranksComplete: 2, readyToComplete: false, canTestOut: false });
 
     const unlocked = run({
       items: allDone,
@@ -181,6 +189,33 @@ describe("seed: the whole bundle through the engine", () => {
     }).skills[mi];
     expect(unlocked.ranks.every((r) => !r.locked)).toBe(true);
     expect(unlocked.readyToComplete).toBe(true);
+  });
+
+  it("locks Market Intelligence while every rank is locked, even though the skill itself requires nothing", () => {
+    const mi = "finance.market-intelligence";
+    // Day one: nothing in it can be worked, so no "Start skill", no test-out, not counted as available.
+    expect(run().skills[mi]).toMatchObject({
+      state: "locked",
+      locked: true,
+      missingRequires: ["crypto.staking-metrics"],
+      canTestOut: false,
+    });
+    // An earlier "Start skill" doesn't make it workable either.
+    expect(run({ skills: [skillRow(mi, { startedAt: "2026-09-22T10:00:00Z" })] }).skills[mi]).toMatchObject({ state: "locked", locked: true });
+    expect(Object.values(run().skills).filter((s) => s.state === "available").map((s) => s.id).sort()).toEqual([
+      "crypto.consensus",
+      "finance.money-settlement",
+    ]);
+
+    // Staking Metrics learned: Rank 1 opens; Rank 2 still waits on Market Structure.
+    const metrics = [learnedRow("crypto.staking-metrics", "tested-out")];
+    const open = run({ skills: metrics }).skills[mi];
+    expect(open).toMatchObject({ state: "available", locked: false, missingRequires: [] });
+    expect(open.ranks.map((r) => r.locked)).toEqual([false, true]);
+    // A test-out clears every rank, so like the completion check it waits for every rank's requires.
+    expect(open.canTestOut).toBe(false);
+    const both = run({ skills: [...metrics, learnedRow("finance.market-structure", "tested-out")] }).skills[mi];
+    expect(both.canTestOut).toBe(true);
   });
 
   it("keeps Chains and Infrastructure's monthly/annual habits out of rank progress, and credits their time", () => {

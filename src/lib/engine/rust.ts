@@ -9,10 +9,16 @@ import type { RecallAttemptRow, VerificationRow } from "@/lib/progress/types";
 
 /** Freshness of one item. All null/false for items that aren't time-sensitive. */
 export interface ItemFreshness {
-  /** Effective as-of date: the later of the content date and the last re-verification. */
+  /** Effective as-of date: the later of the content date and the last "Still true" check. */
   asOf: string | null;
-  /** Local date of the latest re-verification. */
+  /** Local date of the latest "Still true" check. */
   lastVerifiedAt: string | null;
+  /**
+   * Local date of an "It changed" check that hasn't been dealt with yet: no
+   * later "Still true", and the content's As of date is still older. The fact
+   * in content is known to be wrong, so the item stays stale.
+   */
+  changedOn: string | null;
   staleOn: string | null;
   stale: boolean;
 }
@@ -23,7 +29,7 @@ export interface SkillRust {
   items: Record<string, ItemFreshness>;
 }
 
-const NOT_TIME_SENSITIVE: ItemFreshness = { asOf: null, lastVerifiedAt: null, staleOn: null, stale: false };
+const NOT_TIME_SENSITIVE: ItemFreshness = { asOf: null, lastVerifiedAt: null, changedOn: null, staleOn: null, stale: false };
 
 export function computeRust(
   skill: Skill,
@@ -79,10 +85,10 @@ export function computeFreshness(
   today: string,
   freshnessDays: number = FRESHNESS_DAYS,
 ): Record<string, ItemFreshness> {
-  const verifiedOn = latestVerificationDates(ownerId, verifications);
+  const checks = latestChecks(ownerId, verifications);
   const out: Record<string, ItemFreshness> = {};
   for (const item of items) {
-    out[item.id] = itemFreshness(item, factsAsOf, verifiedOn.get(item.id) ?? null, today, freshnessDays);
+    out[item.id] = itemFreshness(item, factsAsOf, checks.get(item.id) ?? NO_CHECKS, today, freshnessDays);
   }
   return out;
 }
@@ -90,29 +96,56 @@ export function computeFreshness(
 function itemFreshness(
   item: Item,
   skillFactsAsOf: string | null,
-  lastVerifiedAt: string | null,
+  checks: ItemChecks,
   today: string,
   freshnessDays: number,
 ): ItemFreshness {
   if (!item.timeSensitive) return NOT_TIME_SENSITIVE;
   // A malformed date is a validator error; skip it (falling back to the skill's) rather than crash the page.
   const contentAsOf = [item.asOf, skillFactsAsOf].find((d) => d !== null && isIsoDate(d)) ?? null;
+  const lastVerifiedAt = checks.confirmedOn;
+  // "It changed" is settled by editing the fact and its As of date (guide §5), or by a later "Still true".
+  const changedOn = checks.changedOn !== null && (contentAsOf === null || contentAsOf < checks.changedOn) ? checks.changedOn : null;
   const asOf = laterDate(contentAsOf, lastVerifiedAt);
-  if (asOf === null) return { ...NOT_TIME_SENSITIVE, lastVerifiedAt };
-  const staleOn = addDays(asOf, freshnessDays);
-  return { asOf, lastVerifiedAt, staleOn, stale: today >= staleOn };
+  if (asOf === null) return { ...NOT_TIME_SENSITIVE, lastVerifiedAt, changedOn };
+  const windowEnds = addDays(asOf, freshnessDays);
+  const staleOn = changedOn !== null && changedOn < windowEnds ? changedOn : windowEnds;
+  return { asOf, lastVerifiedAt, changedOn, staleOn, stale: changedOn !== null || today >= staleOn };
 }
 
-/** Latest re-verification per item id, as a local date. */
-function latestVerificationDates(ownerId: string, verifications: VerificationRow[]): Map<string, string> {
-  const latest = new Map<string, string>();
+interface ItemChecks {
+  /** Local date of the latest "Still true". */
+  confirmedOn: string | null;
+  /** Local date of the latest check when that check was "It changed". */
+  changedOn: string | null;
+}
+
+const NO_CHECKS: ItemChecks = { confirmedOn: null, changedOn: null };
+
+/**
+ * Re-verifications per item id, as local dates. At the same instant "It
+ * changed" beats "Still true": rows arrive in uuid order, so position can't
+ * break the tie.
+ */
+function latestChecks(ownerId: string, verifications: VerificationRow[]): Map<string, ItemChecks> {
+  const confirmed = new Map<string, number>();
+  const latest = new Map<string, { at: number; changed: boolean }>();
   for (const v of verifications) {
     if (v.skillId !== ownerId || v.itemId === "" || !isValidInstant(v.verifiedAt)) continue;
-    const date = localDate(v.verifiedAt);
+    const at = Date.parse(v.verifiedAt);
+    if (!v.changed && at > (confirmed.get(v.itemId) ?? Number.NEGATIVE_INFINITY)) confirmed.set(v.itemId, at);
     const prev = latest.get(v.itemId);
-    if (prev === undefined || date > prev) latest.set(v.itemId, date);
+    if (prev === undefined || at > prev.at || (at === prev.at && v.changed)) latest.set(v.itemId, { at, changed: v.changed });
   }
-  return latest;
+  const out = new Map<string, ItemChecks>();
+  for (const [itemId, last] of latest) {
+    const confirmedAt = confirmed.get(itemId);
+    out.set(itemId, {
+      confirmedOn: confirmedAt === undefined ? null : localDate(new Date(confirmedAt)),
+      changedOn: last.changed ? localDate(new Date(last.at)) : null,
+    });
+  }
+  return out;
 }
 
 /**

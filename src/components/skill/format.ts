@@ -64,3 +64,24 @@ export function parseMinutes(value: string): number | null {
   const n = Number(value.trim());
   return Number.isInteger(n) && n >= 1 && n <= 1440 ? n : null;
 }
+
+/**
+ * Minutes to prefill when completing an item: what's left of its estimate
+ * after the time already logged on it (sessions logged from the item's
+ * details), so accepting the prefill never counts that time twice. Null
+ * (an empty field) when nothing is left or there's no estimate.
+ */
+export function remainingMinutes(estimate: number | null | undefined, logged: number): number | null {
+  if (estimate == null || !Number.isFinite(estimate)) return null;
+  const left = Math.min(1440, Math.round(estimate - Math.max(0, logged)));
+  return left >= 1 ? left : null;
+}
+
+/**
+ * A skill's time logs as the engine totals them (state.ts logSkillId): rows
+ * logged on the skill, plus its own habits' check-off time, which carries
+ * only a habit key `<skill id>/<item id>`.
+ */
+export function skillTimeLogs<T extends { skillId: string | null; habitKey: string | null }>(logs: readonly T[], skillId: string): T[] {
+  return logs.filter((l) => (l.skillId ?? (l.habitKey?.startsWith(`${skillId}/`) ? skillId : null)) === skillId);
+}

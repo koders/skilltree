@@ -152,6 +152,16 @@ export function estimateLabel(skill: Skill): string {
   return est.text;
 }
 
+/** "Rank 2 needs Market Structure": the first locked rank of a workable (unlocked, unlearned) skill, or null. */
+export function lockedRankNote(view: SkillView, titleOf: (id: string) => string): string | null {
+  if (view.learned || view.locked) return null;
+  const rank = view.ranks.find((r) => r.locked);
+  if (!rank) return null;
+  const titles = rank.missingRequires.map(titleOf);
+  const list = titles.length > 1 ? `${titles.slice(0, -1).join(", ")} and ${titles[titles.length - 1]}` : (titles[0] ?? "its prerequisites");
+  return `Rank ${rank.number} needs ${list}`;
+}
+
 export type HintTone = "gold" | "rust" | "mist" | "parchment" | "branch";
 
 export interface Hint {
@@ -171,6 +181,9 @@ export function nextActionHint(meta: SkillMeta, data: TreeData, titleOf: (id: st
   }
   if (v.state === "in-progress") {
     const left = openBlockingItems(meta, data).length;
+    // Nothing open but a locked rank: the prerequisite is the next step, not "0 items left".
+    const waiting = left === 0 ? lockedRankNote(v, titleOf) : null;
+    if (waiting) return { text: waiting, tone: "mist" };
     return { text: left === 1 ? "1 item left" : `${left} items left`, tone: "branch" };
   }
   if (v.state === "available") {

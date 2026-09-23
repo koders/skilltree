@@ -4,7 +4,8 @@
 
 import type { Quest } from "@/lib/content/types";
 import type { AppData } from "@/lib/data";
-import type { PlanEntry, QuestView, SkillState } from "@/lib/engine/types";
+import { localDate } from "@/lib/engine/dates";
+import type { PlanEntry, QuestView, SkillState, ThisWeek, TreeState } from "@/lib/engine/types";
 import { branchColor } from "@/components/ui/meta";
 import { mondayOfWeek } from "./format";
 
@@ -93,6 +94,29 @@ export function buildQuestContext(app: AppData, questId: string): QuestContext |
 /** Status the planner reports is final; "cleared" = done or skipped. */
 export function isCleared(entry: PlanEntry): boolean {
   return entry.status !== "todo";
+}
+
+/**
+ * Keys of other weeks' entries cleared during this quest week. The planner
+ * lists only open carry-over and get-ahead entries; adding these back keeps
+ * the count moving, Undo in reach, and a Recall step's row (which owns its
+ * dialog) mounted long enough to show the result.
+ */
+export function bankedKeys(
+  plan: PlanEntry[],
+  week: Pick<ThisWeek, "week" | "weekStart" | "weekEnd">,
+  state: Pick<TreeState, "items" | "skills">,
+): Set<string> {
+  const within = (at: string | null) => {
+    if (!at) return false;
+    const day = localDate(at);
+    return day >= week.weekStart && day <= week.weekEnd;
+  };
+  const clearedAt = (entry: PlanEntry): string | null => {
+    if (entry.kind === "recall") return Object.hasOwn(state.skills, entry.skillId) ? state.skills[entry.skillId].learnedAt : null;
+    return Object.hasOwn(state.items, entry.key) ? state.items[entry.key].completedAt : null;
+  };
+  return new Set(plan.filter((e) => e.week !== week.week && isCleared(e) && within(clearedAt(e))).map((e) => e.key));
 }
 
 /** Distinct skills the quest's stages name, in route order. */

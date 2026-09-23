@@ -14,7 +14,7 @@ import type { ItemView } from "@/lib/engine/types";
 import { xpForLog } from "@/lib/engine/xp";
 import type { Activity } from "@/lib/progress/types";
 import { usePanel } from "./context";
-import { ACTIVITIES, ACTIVITY_LABEL, formatDay, parseMinutes } from "./format";
+import { ACTIVITIES, ACTIVITY_LABEL, formatDay, parseMinutes, skillTimeLogs } from "./format";
 import { ConfirmAction, escapeHandler, FieldLabel, inputClass, SectionHeading } from "./parts";
 import styles from "./skill.module.css";
 
@@ -25,17 +25,21 @@ export function TimeLogSection() {
   const { run: runDelete } = useAction();
   const [adding, setAdding] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  const logs = data.timeLogs
-    .filter((l) => l.skillId === skill.id)
-    .toSorted((a, b) => b.loggedOn.localeCompare(a.loggedOn) || b.createdAt.localeCompare(a.createdAt));
+  // The same rows the engine totals (habit check-off time included), so the header adds up.
+  const logs = skillTimeLogs(data.timeLogs, skill.id).toSorted(
+    (a, b) => b.loggedOn.localeCompare(a.loggedOn) || b.createdAt.localeCompare(a.createdAt),
+  );
   const shown = showAll ? logs : logs.slice(0, SHOWN);
+  const logXp = logs.reduce((sum, l) => sum + xpForLog(l.activity, l.minutes), 0);
+  // view.xp also counts Recall passes; show that part on its own line rather than in the rows' total.
+  const recallXp = Math.max(0, view.xp - logXp);
 
   return (
     <section aria-labelledby="time-heading">
       <SectionHeading
         id="time-heading"
         title="Time log"
-        meta={logs.length > 0 ? `${formatMinutesShort(view.minutesLogged)} · ${view.xp.toLocaleString("en")} XP` : undefined}
+        meta={logs.length > 0 ? `${formatMinutesShort(view.minutesLogged)} · ${logXp.toLocaleString("en")} XP` : undefined}
         action={
           !adding && (
             <Button size="sm" variant="ghost" onClick={() => setAdding(true)}>
@@ -60,7 +64,8 @@ export function TimeLogSection() {
         <>
           <ul className="divide-y divide-ink-700/80 border-y border-ink-700/80">
             {shown.map((log) => {
-              const item = log.itemId ? itemsById.get(log.itemId) : undefined;
+              const itemId = log.itemId ?? (log.habitKey ? log.habitKey.slice(log.habitKey.indexOf("/") + 1) : null);
+              const item = itemId ? itemsById.get(itemId) : undefined;
               const meta = itemTypeMeta(isItemType(log.activity) ? log.activity : null);
               return (
                 <li key={log.id} className="group/log grid grid-cols-[3.4rem_1fr_auto] items-start gap-x-3 py-2">
@@ -83,19 +88,32 @@ export function TimeLogSection() {
                     )}
                     {log.note && <p className="mt-0.5 text-[12.5px] italic text-mist">{log.note}</p>}
                   </div>
-                  <ConfirmAction
-                    label="Delete time entry"
-                    confirmLabel="Delete"
-                    icon={<Trash2 className="h-3.5 w-3.5" />}
-                    onConfirm={() =>
-                      void runDelete(() => deleteTimeLog({ id: log.id }), { success: "Time entry deleted", tone: "info" })
-                    }
-                    className="md:opacity-0 md:group-hover/log:opacity-100 md:focus-within:opacity-100 md:focus:opacity-100"
-                  />
+                  {log.habitLogId ? (
+                    // Habit time goes with its check-off: undo it on the Habits page.
+                    <span className="pt-px font-mono text-[10px] uppercase tracking-[0.1em] text-mist" title="Logged with a habit check-off">
+                      habit
+                    </span>
+                  ) : (
+                    <ConfirmAction
+                      label="Delete time entry"
+                      confirmLabel="Delete"
+                      icon={<Trash2 className="h-3.5 w-3.5" />}
+                      onConfirm={() =>
+                        void runDelete(() => deleteTimeLog({ id: log.id }), { success: "Time entry deleted", tone: "info" })
+                      }
+                      className="md:opacity-0 md:group-hover/log:opacity-100 md:focus-within:opacity-100 md:focus:opacity-100"
+                    />
+                  )}
                 </li>
               );
             })}
           </ul>
+          {recallXp > 0 && (
+            <p className="mt-2 font-mono text-[11px] text-mist">
+              Plus <span className="text-gold">+{recallXp.toLocaleString("en")} XP</span> from Recall questions passed ·{" "}
+              {view.xp.toLocaleString("en")} XP in all
+            </p>
+          )}
           {logs.length > SHOWN && (
             <button
               type="button"

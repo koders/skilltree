@@ -100,7 +100,7 @@ Each `##` heading under a skill (one level below the skill title) opens a sectio
 | `Review log` | Free markdown: this skill's review history. |
 | anything else | Kept verbatim as an extra section and shown in the side panel. |
 
-A rank may open with its own metadata bullet `- requires: …`. Those prerequisites gate **that rank only** (for example, Terminal Rank 2 needs market structure).
+A rank may open with its own metadata bullet `- requires: …`. Those prerequisites gate **that rank only** (for example, Terminal Rank 2 needs market structure). When every rank is gated, the skill shows as locked until its first rank opens, and a test-out waits for every rank's prerequisites.
 
 ### 2.4 Items
 

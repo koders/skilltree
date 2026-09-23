@@ -2,13 +2,17 @@
 
 // Server Actions: thin wrappers over src/lib/db/mutations.ts. Each validates
 // its input (the mutation parses it with zod), never throws to the client,
-// and refreshes the router after a successful write (docs/decisions.md D2).
+// and refreshes the router afterwards, even when a write failed part-way
+// (docs/decisions.md D2).
 
 import { refresh } from "next/cache";
 import { ZodError } from "zod";
 import { getContent } from "@/lib/content/server";
 import { db } from "@/lib/db/client";
 import * as m from "@/lib/db/mutations";
+import { loadSnapshotWith } from "@/lib/db/snapshot";
+import { localToday } from "@/lib/engine/dates";
+import { computeTreeState } from "@/lib/engine/state";
 import type { ImportCounts } from "@/lib/progress/export";
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -30,6 +34,10 @@ async function run<T>(name: string, write: () => Promise<T>): Promise<ActionResu
     return { ok: true, data };
   } catch (err) {
     console.error(`[action ${name}]`, err);
+    // Several actions make more than one write with no transaction between them, so a
+    // failure can leave some of them applied. Refresh anyway: the UI then shows what was
+    // actually saved instead of snapping back to stale props and inviting a double retry.
+    refresh();
     return { ok: false, error: describeError(err) };
   }
 }
@@ -70,9 +78,16 @@ export async function deleteNote(input: m.IdInput): Promise<ActionResult<null>> 
 // ---------------------------------------------------------------- recall & skills
 
 export async function submitRecall(input: m.SubmitRecallInput): Promise<ActionResult<m.SubmitRecallResult>> {
-  return run("submitRecall", () => {
+  return run("submitRecall", async () => {
     const { index } = getContent();
-    return m.submitRecall(db(), input, (skillId) => index.skills[skillId]);
+    const { skillId, mode } = m.submitRecallSchema.parse(input);
+    // Check against current progress, not the dialog's view of it: before any attempt is stored.
+    if (Object.hasOwn(index.skills, skillId)) {
+      const view = computeTreeState(index, await loadSnapshotWith(db()), localToday()).skills[skillId];
+      const blocked = view ? m.recallBlockedReason(view, mode) : null;
+      if (blocked) throw new Error(blocked);
+    }
+    return m.submitRecall(db(), input, (id) => index.skills[id]);
   });
 }
 

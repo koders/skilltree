@@ -351,12 +351,19 @@ describe("buildPlan statuses and locks", () => {
     });
     const ready = seedPlan({ items: { "crypto.consensus/roughgarden": "skipped" } });
     expect(entry(ready, "crypto.consensus#recall")).toMatchObject({ locked: false, lockReason: null });
-    // A split skill is ready only once both of its ranks are cleared.
+    // A split skill is ready only once both of its ranks are cleared, and both are unlocked.
     const bothRanks = seedPlan({
-      learned: { "crypto.staking-metrics": "completed" },
+      learned: { "crypto.staking-metrics": "completed", "finance.market-structure": "completed" },
       items: allItemsDone(seedIndex(), ["finance.market-intelligence"]),
     });
     expect(entry(bothRanks, "finance.market-intelligence#recall").locked).toBe(false);
+    const rankTwoLocked = seedPlan({
+      learned: { "crypto.staking-metrics": "completed" },
+      items: allItemsDone(seedIndex(), ["finance.market-intelligence"]),
+    });
+    expect(entry(rankTwoLocked, "finance.market-intelligence#recall").lockReason).toBe(
+      "Rank 2 needs Market Structure and Derivatives",
+    );
     const rankOne = seedPlan({
       learned: { "crypto.staking-metrics": "completed" },
       items: {
@@ -365,7 +372,8 @@ describe("buildPlan statuses and locks", () => {
         "finance.market-intelligence/compare-datasets": "done",
       },
     });
-    expect(entry(rankOne, "finance.market-intelligence#recall").lockReason).toBe("Finish the skill's items first");
+    // Rank 2 is still locked here too: its prerequisite is the thing to do next, not "finish the items".
+    expect(entry(rankOne, "finance.market-intelligence#recall").lockReason).toBe("Rank 2 needs Market Structure and Derivatives");
   });
 });
 

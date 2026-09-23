@@ -27,15 +27,23 @@ export function RankSection({ rank, rankView }: { rank: Rank; rankView: RankView
   const [statuses, applyStatus] = useOptimistic(serverStatuses, (state, u: StatusUpdate) => ({ ...state, [u.itemId]: u.status }));
 
   const blocking = rank.items.filter((it) => data.state.items[it.key]?.blocking);
-  const doneCount = blocking.filter((it) => statuses[it.id] !== "todo").length;
+  // A test-out or self-report covers every item (ItemRow shows them as cleared), so they count here too.
+  const covered = view.learned && view.learnedVia !== "completed";
+  const doneCount = covered ? blocking.length : blocking.filter((it) => statuses[it.id] !== "todo").length;
   const complete = view.learned || (blocking.length > 0 ? doneCount === blocking.length : rankView.complete);
   const minutes = rank.items.reduce((sum, it) => sum + (it.optional || it.type === "habit" ? 0 : (it.minutes ?? 0)), 0);
 
-  const disabledReason = view.locked
-    ? `Locked: learn ${view.missingRequires.map((id) => skillsById.get(id)?.title ?? id).join(", ")} first`
-    : rankView.locked
-      ? `Rank locked: learn ${rankView.missingRequires.map((id) => skillsById.get(id)?.title ?? id).join(", ")} first`
-      : null;
+  const titles = (ids: string[]) => ids.map((id) => skillsById.get(id)?.title ?? id).join(", ");
+  // The skill's own requires first; a skill locked only by its ranks explains each rank by its own.
+  const ownMissing = view.missingRequires.filter((id) => skill.requires.includes(id));
+  const disabledReason =
+    ownMissing.length > 0
+      ? `Locked: learn ${titles(ownMissing)} first`
+      : rankView.locked
+        ? `Rank locked: learn ${titles(rankView.missingRequires)} first`
+        : view.locked
+          ? `Locked: learn ${titles(view.missingRequires)} first`
+          : null;
 
   const setStatus = (item: Item, status: ItemStatus, logMinutes?: number) => {
     const activity = item.type && item.type !== "habit" ? item.type : "other";

@@ -1,9 +1,8 @@
 import clsx from "clsx";
 import { CalendarDays, ChevronRight, CornerDownRight, Sparkles, Star } from "lucide-react";
 import { formatMinutesShort, itemTypeMeta } from "@/components/ui/meta";
-import { localDate } from "@/lib/engine/dates";
 import type { PlanEntry, ThisWeek } from "@/lib/engine/types";
-import { isCleared, type QuestContext } from "./context";
+import { bankedKeys, isCleared, type QuestContext } from "./context";
 import { entryRowProps, type EntryVariant } from "./entryParts";
 import { formatDay, formatRange, plainText } from "./format";
 import { QuestEntryRow } from "./QuestEntryRow";
@@ -15,9 +14,7 @@ export function ThisWeekCard({ ctx, thisWeek }: { ctx: QuestContext; thisWeek: T
   const { entries } = thisWeek;
   // The planner lists only open carry-over and get-ahead entries. Keep the ones
   // cleared this week in view too, so the count moves and Undo stays in reach.
-  const banked = new Set(
-    view.plan.filter((e) => e.week !== thisWeek.week && clearedWithin(ctx, e, thisWeek)).map((e) => e.key),
-  );
+  const banked = bankedKeys(view.plan, thisWeek, ctx.app.state);
   const carryKeys = new Set(thisWeek.carryOver.map((e) => e.key));
   const aheadKeys = new Set(thisWeek.getAhead.map((e) => e.key));
   const carryOver = view.plan.filter((e) => carryKeys.has(e.key) || (banked.has(e.key) && e.week < thisWeek.week));
@@ -151,15 +148,6 @@ export function ThisWeekCard({ ctx, thisWeek }: { ctx: QuestContext; thisWeek: T
       </div>
     </section>
   );
-}
-
-/** An item entry the user cleared (done or skipped) during the current quest week. */
-function clearedWithin(ctx: QuestContext, entry: PlanEntry, week: ThisWeek): boolean {
-  if (entry.kind !== "item" || !isCleared(entry)) return false;
-  const at = Object.hasOwn(ctx.app.state.items, entry.key) ? ctx.app.state.items[entry.key].completedAt : null;
-  if (!at) return false;
-  const day = localDate(at);
-  return day >= week.weekStart && day <= week.weekEnd;
 }
 
 function cssId(key: string): string {

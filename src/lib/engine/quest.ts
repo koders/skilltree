@@ -201,9 +201,13 @@ function entryStatus(tree: TreeState, skillId: string, own: ItemStatus): ItemSta
 function itemLockReason(index: ContentIndex, tree: TreeState, skillId: string, rankNumber: number): string | null {
   const view = lookup(tree.skills, skillId);
   if (!view || view.learned) return null;
-  if (view.locked) return `Learn ${listTitles(index, view.missingRequires)} first`;
+  // The skill's own requires come first; a skill locked only because every rank is
+  // locked explains each rank by that rank's own requires.
+  const own = ownMissingRequires(index, skillId, view.missingRequires);
+  if (own.length > 0) return `Learn ${listTitles(index, own)} first`;
   const rank = view.ranks.find((r) => r.number === rankNumber);
   if (rank?.locked) return `Rank ${rankNumber} needs ${listTitles(index, rank.missingRequires)}`;
+  if (view.locked) return `Learn ${listTitles(index, view.missingRequires)} first`;
   return null;
 }
 
@@ -211,8 +215,16 @@ function recallLockReason(index: ContentIndex, tree: TreeState, skillId: string)
   const view = lookup(tree.skills, skillId);
   if (view?.learned) return null;
   if (view?.locked) return `Learn ${listTitles(index, view.missingRequires)} first`;
+  const lockedRank = view?.ranks.find((r) => r.locked);
+  if (lockedRank) return `Rank ${lockedRank.number} needs ${listTitles(index, lockedRank.missingRequires)}`;
   if (!view?.readyToComplete) return "Finish the skill's items first";
   return null;
+}
+
+/** The part of a skill's missing requires that the skill itself (not one of its ranks) names. */
+function ownMissingRequires(index: ContentIndex, skillId: string, missing: string[]): string[] {
+  const requires = lookup(index.skills, skillId)?.requires ?? [];
+  return missing.filter((id) => requires.includes(id));
 }
 
 /** "A", "A and B", "A, B and C". */

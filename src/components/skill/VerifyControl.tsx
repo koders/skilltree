@@ -40,8 +40,8 @@ export function VerifyControl({
     .filter((v) => v.skillId === skill.id && v.itemId === item.id)
     .reduce<(typeof data.verifications)[number] | null>((acc, v) => (acc === null || v.verifiedAt > acc.verifiedAt ? v : acc), null);
   const freshUntil = formatDay(addDays(data.today, FRESHNESS_DAYS), data.today);
-  // Stays until a later "Still true" check confirms the content was updated.
-  const changePending = latest?.changed === true;
+  // The engine keeps the item stale until a later "Still true" or a newer As of date in the file.
+  const changePending = itemView.changedOn !== null && latest?.changed === true;
 
   const submit = (changed: boolean) =>
     run(() => verifyItem({ skillId: skill.id, itemId: item.id, changed, note: note.trim() || null }), {
@@ -75,7 +75,11 @@ export function VerifyControl({
           </span>
         )}
         <span className="font-mono text-[11px] text-mist-dim">
-          {itemView.lastVerifiedAt ? `last checked ${formatDay(itemView.lastVerifiedAt, data.today)}` : "not re-checked yet"}
+          {itemView.changedOn
+            ? `change found ${formatDay(itemView.changedOn, data.today)}`
+            : itemView.lastVerifiedAt
+              ? `last confirmed ${formatDay(itemView.lastVerifiedAt, data.today)}`
+              : "not re-checked yet"}
         </span>
       </div>
 

@@ -162,5 +162,6 @@ export function entryRowProps(
           .map((a) => a.questionId)
       : [],
     skillLearned: skill.learned,
+    minutesLogged: Object.hasOwn(ctx.app.state.items, entry.key) ? ctx.app.state.items[entry.key].minutesLogged : 0,
   };
 }

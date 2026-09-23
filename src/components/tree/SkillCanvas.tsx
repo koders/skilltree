@@ -23,6 +23,7 @@ import { LocateFixed, Minus, Plus, Scan } from "lucide-react";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import type { TreeData } from "@/lib/view-model";
 import { CanvasContext, type CanvasActions } from "./canvas-context";
+import { frontierSkills, type FrameArea } from "./frontier";
 import { buildCanvasGraph, HUB_SIZE, NODE_SIZE, widestGapAngle, type CanvasGraph } from "./graph";
 import { HoverCard } from "./HoverCard";
 import type { TreeModel } from "./model";
@@ -105,13 +106,18 @@ function CanvasInner({ data, model, visible, selectedId, onSelect, panelOpen }: 
     [nodes],
   );
 
-  function fitPadding(): FitViewOptions["padding"] {
+  function paddingPx(): FrameArea["padding"] {
     // Wide screens keep the tree clear of the legend; phones stay below the HUD bar.
     const wide = window.innerWidth >= 1024;
     const narrow = window.innerWidth < 640;
     return narrow
-      ? { top: "84px", bottom: "64px", left: "16px", right: "16px" }
-      : { top: "56px", bottom: "32px", left: wide ? "300px" : "24px", right: wide ? "72px" : "24px" };
+      ? { top: 84, bottom: 64, left: 16, right: 16 }
+      : { top: 56, bottom: 32, left: wide ? 300 : 24, right: wide ? 72 : 24 };
+  }
+
+  function fitPadding(): FitViewOptions["padding"] {
+    const p = paddingPx();
+    return { top: `${p.top}px`, bottom: `${p.bottom}px`, left: `${p.left}px`, right: `${p.right}px` };
   }
 
   function fitAll(duration: number) {
@@ -126,15 +132,24 @@ function CanvasInner({ data, model, visible, selectedId, onSelect, panelOpen }: 
    * at a readable zoom, not the whole sky at specks. "Fit" shows everything.
    */
   function fitFrontier(duration: number) {
-    const ids = model.skills
+    const inPlay = model.skills
       .filter((m) => isInPlay(m.view) || model.questSkillIds.has(m.skill.id))
-      .map((m) => ({ id: m.skill.id }));
-    if (ids.length === 0) return fitAll(duration);
+      .flatMap((m) => {
+        const p = graph.pos.get(m.skill.id);
+        return p ? [{ id: m.skill.id, x: p.x, y: p.y }] : [];
+      });
+    if (inPlay.length === 0) return fitAll(duration);
+    const minZoom = FAR_ZOOM + 0.05;
+    const state = store.getState();
+    const width = state.width || window.innerWidth;
+    const height = state.height || window.innerHeight;
+    // A phone can't fit every skill in play at a readable zoom: keep the hub and the nearest ones.
+    const ids = frontierSkills(inPlay, { node: NODE_SIZE, hub: HUB_SIZE }, { width, height, padding: paddingPx() }, minZoom);
     return rf.fitView({
-      nodes: [{ id: HUB_ID }, ...ids],
+      nodes: [{ id: HUB_ID }, ...ids.map((id) => ({ id }))],
       padding: fitPadding(),
       duration,
-      minZoom: FAR_ZOOM + 0.05,
+      minZoom,
       maxZoom: 0.8,
     });
   }

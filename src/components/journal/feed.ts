@@ -151,8 +151,16 @@ export function buildFeed(index: ContentIndex, snapshot: ProgressSnapshot, today
     const first = rows.reduce((a, b) => (a.createdAt <= b.createdAt ? a : b));
     const passed = rows.filter((r) => r.result === "pass").length;
     const info = skillInfo(first.skillId);
-    const verb = first.mode === "test-out" ? "Tested out of" : first.mode === "complete" ? "Completion check for" : "Reviewed";
     const all = passed === rows.length;
+    // Only a clean sweep is a test-out (D6); anything less left the skill unlearned.
+    const verb =
+      first.mode === "test-out"
+        ? all
+          ? "Tested out of"
+          : "Test-out attempt on"
+        : first.mode === "complete"
+          ? "Completion check for"
+          : "Reviewed";
     const day = dayOf(first.createdAt);
     entries.push({
       id: `recall:${sessionId}`,
