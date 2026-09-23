@@ -32,3 +32,7 @@ Why: Terminal clients trade derivatives daily; perps, basis and liquidations dri
 ## Sources
 - [MIT OCW 15.S12](https://ocw.mit.edu/courses/15-s12-blockchain-and-money-fall-2018/) — as of 2026-09-23
 - [Galaxy: Crypto's most violent flash crash yet](https://www.galaxy.com/insights/research/cryptos-flash-crash-liquidation-binance-adl-auto-deleveraging) — as of 2026-09-23
+- [CoinGecko: October 10 crash explained](https://www.coingecko.com/learn/october-10-crypto-crash-explained) — as of 2026-09-23
+
+## Review log
+- **Round 5 (2026-09-23)**: attached seed source that backs facts in this skill (CoinGecko); the import only matched sources by URL.

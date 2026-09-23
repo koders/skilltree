@@ -37,3 +37,9 @@ Why: SR's Cosmos Hub formula covers every Cosmos SDK chain it tracks, so learnin
 ## Sources
 - [SR: Cosmos Hub asset page](https://www.stakingrewards.com/asset/cosmos) — as of 2026-09-23
 - [Cosmos Hub forum: Tokenomics idea n°1](https://forum.cosmos.network/t/tokenomics-idea-n-1/16354) — as of 2026-09-23
+- [CoinStats: Cosmos Hub, Proposals 848/868](https://coinstats.app/ai/a/fundamental-analysis-cosmos) — as of 2026-09-23
+- [Cube Exchange: ATOM inflation band](https://www.cube.exchange/what-is/atom) — as of 2026-09-23
+- [CryptoToolbox: ATOM validators and unbonding](https://cryptotoolbox.io/atom-staking) — as of 2026-09-23
+
+## Review log
+- **Round 5 (2026-09-23)**: attached seed sources that back facts in this skill (CoinStats, Cube Exchange, CryptoToolbox); the import only matched sources by URL.

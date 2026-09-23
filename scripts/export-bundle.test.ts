@@ -8,7 +8,7 @@ import { diskPath } from "@/lib/content/load";
 import { main } from "./export-bundle";
 import { planImport } from "./import-bundle";
 
-const SEED_FILE = "crypto-finance-the-tie.skilltree.md";
+const SEED_FILE = "seed/crypto-finance-the-tie.skilltree.md";
 const seed = fs.readFileSync(path.join(process.cwd(), SEED_FILE), "utf8");
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "skilltree-export-"));
 beforeAll(() => {

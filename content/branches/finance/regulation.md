@@ -26,3 +26,9 @@ Why: Regulation decides what institutions and staking providers can do; MiCA als
 
 ## Sources
 - [Latham & Watkins: US Crypto Policy Tracker](https://www.lw.com/en/us-crypto-policy-tracker/legislative-developments) — as of 2026-09-23
+- [Elliptic: end of MiCA's transitional period](https://www.elliptic.co/blog/the-end-of-micas-transitional-period) — as of 2026-09-23
+- [Elvinger Hoss: MiCA transitional period ended](https://elvingerhoss.lu/insights/publications/mica-transitional-period-has-come-end-what-comes-next-casps) — as of 2026-09-23
+- [Triple-A: CLARITY Act status](https://www.triple-a.io/blog/clarity-act) — as of 2026-09-23
+
+## Review log
+- **Round 5 (2026-09-23)**: attached seed sources that back facts in this skill (Elliptic, Elvinger Hoss, Triple-A); the import only matched sources by URL.

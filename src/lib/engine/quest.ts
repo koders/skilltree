@@ -311,8 +311,16 @@ function runWeek(startedOn: string, today: string): number | null {
 }
 
 /** questId → current week of its active run; null when the quest isn't actively running. */
+/**
+ * questId → current week, for runs whose maintenance habits should run.
+ * A completed run keeps its maintenance going: the habits exist to keep
+ * learned skills from going rusty after the quest (seed: "Keeps learned
+ * skills from going rusty"). Paused and abandoned runs pause them.
+ */
 export function activeQuestWeeks(views: QuestView[]): Record<string, number | null> {
-  return Object.fromEntries(views.map((v) => [v.questId, v.status === "active" ? v.currentWeek : null]));
+  return Object.fromEntries(
+    views.map((v) => [v.questId, v.status === "active" || v.status === "completed" ? v.currentWeek : null]),
+  );
 }
 
 function thisWeekView(
@@ -416,7 +424,7 @@ function paceWeeks(plan: PlanEntry[], currentWeek: number): number {
 function maintenanceState(quest: Quest, run: QuestRunRow | null, currentWeek: number | null): QuestView["maintenance"] {
   const fromWeek = quest.maintenance?.fromWeek ?? null;
   const active =
-    run?.status === "active" &&
+    (run?.status === "active" || run?.status === "completed") &&
     quest.maintenance !== null &&
     currentWeek !== null &&
     currentWeek >= Math.max(1, fromWeek ?? 1);

@@ -13,7 +13,7 @@ Why: LSTs and restaking are a large share of SR's asset and provider data, and a
   - Done when: I can explain why an LST can crash on one venue while its redemption value is unchanged.
 - [ ] [read] Restaking: EigenLayer, Symbiotic, liquid restaking tokens (LRTs) — ~45 min {#restaking-eigenlayer-symbiotic-liquid}
   - Do: focus on the extra slashing conditions an AVS adds.
-- [ ] [watch] Optional: SR's Staking Insider podcast back catalog (inactive, but the founder interviews hold up) {#optional-srs-staking-insider-podcast}
+- [ ] [watch] Optional: SR's Staking Insider podcast back catalog (inactive, but the founder interviews hold up) — ~1 h {#optional-srs-staking-insider-podcast}
   - Resource: [@search@YouTube search](https://www.youtube.com/results?search_query=Staking+Insider+Staking+Rewards+podcast)
 
 ## Recall
@@ -23,3 +23,6 @@ Why: LSTs and restaking are a large share of SR's asset and provider data, and a
 
 ## Sources
 - [Galaxy: Crypto's most violent flash crash yet](https://www.galaxy.com/insights/research/cryptos-flash-crash-liquidation-binance-adl-auto-deleveraging) — as of 2026-09-23
+
+## Review log
+- **Round 5 (2026-09-23)**: added a time estimate (~1 h) to the optional Staking Insider item.

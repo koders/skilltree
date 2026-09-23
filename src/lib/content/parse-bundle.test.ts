@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { parseBundle } from "@/lib/content/parse-bundle";
 import type { Item, Skill } from "@/lib/content/types";
 
-const SEED_FILE = "crypto-finance-the-tie.skilltree.md";
+const SEED_FILE = "seed/crypto-finance-the-tie.skilltree.md";
 const seed = fs.readFileSync(path.join(process.cwd(), SEED_FILE), "utf8");
 const tree = parseBundle(seed, SEED_FILE);
 

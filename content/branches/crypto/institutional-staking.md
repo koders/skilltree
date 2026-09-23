@@ -14,3 +14,9 @@ Why: Stakin, now part of The Tie, sells institutional staking; this is how that 
 - In custodial vs non-custodial staking, who holds the keys and who bears which risk? {#q1}
 - What does a distributed validator protect against? {#q2}
 - What should a staking SLA cover? {#q3}
+
+## Sources
+- [The Tie: acquisition of Stakin](https://www.thetie.io/insights/the-tie-acquires-stakin-1-5b-aud-to-launch-infrastructure-solutions-division) — as of 2026-09-23
+
+## Review log
+- **Round 5 (2026-09-23)**: attached seed source that backs facts in this skill (The Tie); the import only matched sources by URL.

@@ -454,7 +454,7 @@ describe("shape", () => {
 
 describe("seed bundle", () => {
   it("matches the requires in crypto-finance-the-tie.skilltree.md", () => {
-    const markdown = readFileSync(path.join(process.cwd(), "crypto-finance-the-tie.skilltree.md"), "utf8");
+    const markdown = readFileSync(path.join(process.cwd(), "seed/crypto-finance-the-tie.skilltree.md"), "utf8");
     expect(extractSeedRequires(markdown)).toEqual(SEED);
   });
 

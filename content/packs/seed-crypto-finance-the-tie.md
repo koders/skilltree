@@ -4,7 +4,7 @@ title: Skill tree seed — Crypto & Finance for The Tie
 owner: Rihards
 created: 2026-09-23
 facts_as_of: 2026-09-23
-review_rounds: 4
+review_rounds: 5
 branches: [swe, finance, crypto]
 quests: [quest-crypto-finance-the-tie]
 ---
@@ -76,8 +76,14 @@ Why this plan exists: every skill maps to a part of The Tie's business, so what 
 - Missing Done when checks were added to finance.institutions, finance.capital-formation, crypto.institutional-staking, crypto.onchain-data and crypto.onchain-yield.
 - Known gap: 14 `@search@` links still need resolving into exact videos.
 
-**Open for round 5**
-- Is ~4–5 h/week for 12 weeks realistic, or should some finance.institutions items become optional?
+**Round 5 (2026-09-23)**: imported into the skilltree app (`pnpm content:import`).
+- Split into one file per skill, branch and quest under `content/`; item and Recall ids generated.
+- Validator hard rules: 6 items had no time estimate (5 habits and the optional Staking Insider item). Estimates added.
+- Sources: the 20 seed sources linked from a skill were attached by the importer; the other 12 were attached by hand to the skills whose facts they back.
+- Left for review (validator warnings): 7 ranks without a `do` / `build` / `output` item, 2 items over 2 h (the MIT and Roughgarden lecture sets), finance.market-structure Rank 2 at 45 min, one Done when phrased as "I know…", and the 14 `@search@` links.
+
+**Open for round 6** (carried over from round 5, still unanswered)
+- Is ~4–5 h/week for 12 weeks realistic, or should some finance.institutions items become optional? Related: the weekly maintenance habits now add up to ~3.7 h/week against the ~2 h/week target. Trim it, or make the one-page write-up monthly?
 - Should pre-existing skills (React, Next.js…) get self-assessed ranks, and should SEO/AEO become its own branch?
 - Any area to go deeper on (e.g. Bitcoin staking/BTCfi, tokenized real-world assets)?
 

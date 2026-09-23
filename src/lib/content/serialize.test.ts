@@ -17,7 +17,7 @@ import {
 } from "@/lib/content/serialize";
 import type { ContentTree, Item } from "@/lib/content/types";
 
-const SEED_FILE = "crypto-finance-the-tie.skilltree.md";
+const SEED_FILE = "seed/crypto-finance-the-tie.skilltree.md";
 const seed = fs.readFileSync(path.join(process.cwd(), SEED_FILE), "utf8");
 
 /** Drops `file`/`line` everywhere: they describe where text sits, not what it means. */

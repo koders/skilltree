@@ -82,7 +82,7 @@ interface SeedSkillFacts {
 }
 
 function readSeed(): string {
-  return fs.readFileSync(path.join(process.cwd(), "crypto-finance-the-tie.skilltree.md"), "utf8");
+  return fs.readFileSync(path.join(process.cwd(), "seed/crypto-finance-the-tie.skilltree.md"), "utf8");
 }
 
 function toMinutes(amount: string, unit: string): number {
@@ -698,11 +698,11 @@ describe("computeQuestView", () => {
     });
   });
 
-  it("keeps a completed run's status", () => {
+  it("keeps a completed run's status, and its maintenance running", () => {
     const view = seedView({ runs: [makeRun({ status: "completed" })], today: dayOfWeek(14) });
     expect(view.status).toBe("completed");
     expect(view.currentWeek).toBe(14);
-    expect(view.maintenance.active).toBe(false);
+    expect(view.maintenance.active).toBe(true);
   });
 
   it("rejects an unknown quest id", () => {
@@ -943,5 +943,18 @@ describe("with the real computeTreeState", () => {
     expect(entry(real.plan, "crypto.ethereum-staking/pectra").lockReason).toBe(
       "Learn Staking Metrics (SR methodology) first",
     );
+  });
+});
+
+describe("maintenance after a quest is completed", () => {
+  it("keeps maintenance habits running for completed runs, pauses them for paused ones", async () => {
+    const { activeQuestWeeks } = await import("@/lib/engine/quest");
+    const base = { stages: [], plan: [], progress: 1, thisWeek: null, nextUp: null, paceWeeks: 0, run: null, maintenance: { active: true, fromWeek: 13 } };
+    const weeks = activeQuestWeeks([
+      { ...base, questId: "quest-a", status: "completed", currentWeek: 20 },
+      { ...base, questId: "quest-b", status: "paused", currentWeek: 5 },
+      { ...base, questId: "quest-c", status: "active", currentWeek: 2 },
+    ]);
+    expect(weeks).toEqual({ "quest-a": 20, "quest-b": null, "quest-c": 2 });
   });
 });

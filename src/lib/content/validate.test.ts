@@ -674,7 +674,7 @@ describe("validate: sorting and summary", () => {
 });
 
 // Runs against the real seed once the parser (built in parallel) exists.
-const SEED = path.join(process.cwd(), "crypto-finance-the-tie.skilltree.md");
+const SEED = path.join(process.cwd(), "seed/crypto-finance-the-tie.skilltree.md");
 const PARSER = path.join(process.cwd(), "src/lib/content/parse-bundle.ts");
 
 describe.skipIf(!fs.existsSync(PARSER) || !fs.existsSync(SEED))("validate: the seed bundle", () => {

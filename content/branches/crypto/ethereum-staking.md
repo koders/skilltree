@@ -27,3 +27,7 @@ Why: Current Ethereum changes (Pectra, Glamsterdam, MEV) move SR's ETH figures a
 
 ## Sources
 - [Figment: Glamsterdam for institutional stakers](https://www.figment.io/insights/glamsterdam-what-ethereums-next-upgrade-means-for-institutional-stakers/) — as of 2026-09-23
+- [TokenToolHub: Glamsterdam timing](https://tokentoolhub.com/ethereum-glamsterdam-upgrade-2026/) — as of 2026-09-23
+
+## Review log
+- **Round 5 (2026-09-23)**: attached seed source that backs facts in this skill (TokenToolHub); the import only matched sources by URL.

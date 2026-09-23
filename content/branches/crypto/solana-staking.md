@@ -35,3 +35,7 @@ Why: Solana is a major staking asset on SR, and its inflation and consensus are 
 - [Kiln: Alpenglow](https://www.kiln.fi/post/solanas-alpenglow-upgrade-what-it-means-for-stakers-and-validators) — as of 2026-09-23
 - [Solana forum: SIMD-0550](https://forum.solana.com/t/simd-0550-proposal-to-double-disinflation/4874) — as of 2026-09-23
 - [Blockworks Research: SOL value accrual](https://app.blockworksresearch.com/unlocked/sol-value-accrual) — as of 2026-09-23
+- [Avalanche Builder Hub: Helicon notice](https://build.avax.network/integrations/thetie) — as of 2026-09-23
+
+## Review log
+- **Round 5 (2026-09-23)**: attached seed source that backs facts in this skill (Avalanche Builder Hub); the import only matched sources by URL.

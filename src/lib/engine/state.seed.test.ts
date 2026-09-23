@@ -26,7 +26,7 @@ import type { ProgressSnapshot } from "@/lib/progress/types";
 
 const TODAY = "2026-09-23";
 const FIXTURE = path.join(process.cwd(), "src/lib/engine/__fixtures__/seed-crypto-skills.json");
-const SEED = path.join(process.cwd(), "crypto-finance-the-tie.skilltree.md");
+const SEED = path.join(process.cwd(), "seed/crypto-finance-the-tie.skilltree.md");
 
 function isContentTree(value: unknown): value is ContentTree {
   if (typeof value !== "object" || value === null) return false;

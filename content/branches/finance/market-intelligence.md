@@ -27,3 +27,10 @@ Why: The Terminal is The Tie's core product; using it like a client makes me bet
 - Which Terminal features would you combine to answer "why did this token move today?" {#q1}
 - What does the CME vs crypto-native basis tell you about demand for leverage? {#q2}
 - Which Terminal staking fields differ from SR's definitions? {#q3}
+
+## Sources
+- [The Tie Terminal product page](https://www.thetie.io/solutions/terminal) — as of 2026-09-23
+- [The Tie homepage — business lines](https://www.thetie.io/) — as of 2026-09-23
+
+## Review log
+- **Round 5 (2026-09-23)**: attached seed sources that back facts in this skill (The Tie Terminal product page, The Tie homepage — business lines); the import only matched sources by URL.
