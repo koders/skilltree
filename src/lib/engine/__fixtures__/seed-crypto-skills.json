@@ -1,0 +1,455 @@
+{
+  "branches": [
+    {
+      "id": "crypto",
+      "title": "Crypto & Web3",
+      "note": null,
+      "description": null,
+      "color": null,
+      "order": null,
+      "skillIds": [
+        "crypto.consensus",
+        "crypto.eth-validators",
+        "crypto.staking-metrics"
+      ],
+      "extraMeta": {},
+      "file": "crypto-finance-the-tie.skilltree.md",
+      "line": 245
+    }
+  ],
+  "skills": [
+    {
+      "id": "crypto.consensus",
+      "branchId": "crypto",
+      "slug": "consensus",
+      "title": "Consensus and Proof of Stake",
+      "requires": [],
+      "related": [],
+      "status": null,
+      "estimate": {
+        "text": "~5 h",
+        "hours": 5,
+        "optionalHours": null
+      },
+      "factsAsOf": "2026-09-23",
+      "why": "Everything in staking rests on consensus; the foundation for every chain SR covers.",
+      "description": null,
+      "ranks": [
+        {
+          "id": "rank-1",
+          "number": 1,
+          "name": null,
+          "requires": [],
+          "items": [
+            {
+              "id": "roughgarden-foundations",
+              "key": "crypto.consensus/roughgarden-foundations",
+              "ownerId": "crypto.consensus",
+              "type": "watch",
+              "rawType": "watch",
+              "title": "Roughgarden — Foundations of Blockchains, selected topics",
+              "minutes": 300,
+              "timeText": "~5 h",
+              "timeSensitive": false,
+              "optional": false,
+              "checked": false,
+              "fields": [
+                {
+                  "label": "Resource",
+                  "text": "[@video@videos](https://timroughgarden.org/videos.html), [@course@course page with readings](https://timroughgarden.github.io/fob21/)",
+                  "line": 258
+                },
+                {
+                  "label": "Do",
+                  "text": "watch only these topics: the SMR problem (intro), Tendermint and partial synchrony, longest-chain consensus, proof-of-work sybil resistance, proof-of-stake sybil resistance, transaction fees and EIP-1559, economic security.",
+                  "line": 259
+                },
+                {
+                  "label": "Skip",
+                  "text": "the Dolev-Strong and FLP proofs on the first pass; read the [@article@Lectures 2–7 overview PDF](https://timroughgarden.github.io/fob21/l/l2-7-overview.pdf) instead.",
+                  "line": 260
+                },
+                {
+                  "label": "Done when",
+                  "text": "I can explain why \"33%\" keeps appearing in PoS whitepapers, and why PoS chains finalize while Bitcoin's finality is only probabilistic.",
+                  "line": 261
+                }
+              ],
+              "resources": [
+                {
+                  "type": "video",
+                  "title": "videos",
+                  "url": "https://timroughgarden.org/videos.html",
+                  "field": "Resource"
+                },
+                {
+                  "type": "course",
+                  "title": "course page with readings",
+                  "url": "https://timroughgarden.github.io/fob21/",
+                  "field": "Resource"
+                },
+                {
+                  "type": "article",
+                  "title": "Lectures 2–7 overview PDF",
+                  "url": "https://timroughgarden.github.io/fob21/l/l2-7-overview.pdf",
+                  "field": "Skip"
+                }
+              ],
+              "do": "watch only these topics: the SMR problem (intro), Tendermint and partial synchrony, longest-chain consensus, proof-of-work sybil resistance, proof-of-stake sybil resistance, transaction fees and EIP-1559, economic security.",
+              "skip": "the Dolev-Strong and FLP proofs on the first pass; read the [@article@Lectures 2–7 overview PDF](https://timroughgarden.github.io/fob21/l/l2-7-overview.pdf) instead.",
+              "doneWhen": "I can explain why \"33%\" keeps appearing in PoS whitepapers, and why PoS chains finalize while Bitcoin's finality is only probabilistic.",
+              "ifStuck": null,
+              "fastTrack": null,
+              "verify": null,
+              "asOf": null,
+              "cadence": null,
+              "line": 257
+            }
+          ],
+          "line": 256
+        }
+      ],
+      "recall": [
+        {
+          "id": "q1",
+          "text": "Why can BFT consensus tolerate fewer than one third faulty validators, but not more?",
+          "line": 264
+        },
+        {
+          "id": "q2",
+          "text": "What's the difference between probabilistic and deterministic finality?",
+          "line": 265
+        },
+        {
+          "id": "q3",
+          "text": "How does proof of stake provide sybil resistance?",
+          "line": 266
+        }
+      ],
+      "sources": [],
+      "reviewLog": null,
+      "sections": [],
+      "extraMeta": {},
+      "file": "crypto-finance-the-tie.skilltree.md",
+      "line": 249
+    },
+    {
+      "id": "crypto.eth-validators",
+      "branchId": "crypto",
+      "slug": "eth-validators",
+      "title": "Ethereum Validator Economics",
+      "requires": [
+        "crypto.consensus"
+      ],
+      "related": [],
+      "status": null,
+      "estimate": {
+        "text": "~3.5 h",
+        "hours": 3.5,
+        "optionalHours": null
+      },
+      "factsAsOf": "2026-09-23",
+      "why": "Ethereum is SR's anchor asset; validator economics explains where ETH staking yield comes from.",
+      "description": null,
+      "ranks": [
+        {
+          "id": "rank-1",
+          "number": 1,
+          "name": null,
+          "requires": [],
+          "items": [
+            {
+              "id": "ethereum-org-pos-docs",
+              "key": "crypto.eth-validators/ethereum-org-pos-docs",
+              "ownerId": "crypto.eth-validators",
+              "type": "read",
+              "rawType": "read",
+              "title": "ethereum.org proof-of-stake docs",
+              "minutes": 30,
+              "timeText": "~30 min",
+              "timeSensitive": false,
+              "optional": false,
+              "checked": false,
+              "fields": [
+                {
+                  "label": "Resource",
+                  "text": "[@official@ethereum.org PoS](https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/)",
+                  "line": 277
+                }
+              ],
+              "resources": [
+                {
+                  "type": "official",
+                  "title": "ethereum.org PoS",
+                  "url": "https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/",
+                  "field": "Resource"
+                }
+              ],
+              "do": null,
+              "skip": null,
+              "doneWhen": null,
+              "ifStuck": null,
+              "fastTrack": null,
+              "verify": null,
+              "asOf": null,
+              "cadence": null,
+              "line": 276
+            },
+            {
+              "id": "eth2book-incentives",
+              "key": "crypto.eth-validators/eth2book-incentives",
+              "ownerId": "crypto.eth-validators",
+              "type": "read",
+              "rawType": "read",
+              "title": "Upgrading Ethereum (Ben Edgington), incentive-layer chapters",
+              "minutes": 120,
+              "timeText": "~2 h",
+              "timeSensitive": false,
+              "optional": false,
+              "checked": false,
+              "fields": [
+                {
+                  "label": "Resource",
+                  "text": "[@book@eth2book.info](https://eth2book.info)",
+                  "line": 279
+                },
+                {
+                  "label": "Do",
+                  "text": "read staking, issuance, rewards, penalties, inactivity leak, slashing.",
+                  "line": 280
+                },
+                {
+                  "label": "Done when",
+                  "text": "I can name the three validator duties (attesting, proposing, sync committee) and roughly what share of rewards each pays.",
+                  "line": 281
+                }
+              ],
+              "resources": [
+                {
+                  "type": "book",
+                  "title": "eth2book.info",
+                  "url": "https://eth2book.info",
+                  "field": "Resource"
+                }
+              ],
+              "do": "read staking, issuance, rewards, penalties, inactivity leak, slashing.",
+              "skip": null,
+              "doneWhen": "I can name the three validator duties (attesting, proposing, sync committee) and roughly what share of rewards each pays.",
+              "ifStuck": null,
+              "fastTrack": null,
+              "verify": null,
+              "asOf": null,
+              "cadence": null,
+              "line": 278
+            },
+            {
+              "id": "validator-money-note",
+              "key": "crypto.eth-validators/validator-money-note",
+              "ownerId": "crypto.eth-validators",
+              "type": "output",
+              "rawType": "output",
+              "title": "One-page note: \"How a validator earns and loses money on Ethereum\"",
+              "minutes": 60,
+              "timeText": "~1 h",
+              "timeSensitive": false,
+              "optional": false,
+              "checked": false,
+              "fields": [],
+              "resources": [],
+              "do": null,
+              "skip": null,
+              "doneWhen": null,
+              "ifStuck": null,
+              "fastTrack": null,
+              "verify": null,
+              "asOf": null,
+              "cadence": null,
+              "line": 282
+            }
+          ],
+          "line": 275
+        }
+      ],
+      "recall": [
+        {
+          "id": "q1",
+          "text": "What are the three validator duties, and which earns the most?",
+          "line": 285
+        },
+        {
+          "id": "q2",
+          "text": "What gets a validator slashed, as opposed to merely penalized?",
+          "line": 286
+        },
+        {
+          "id": "q3",
+          "text": "What is the inactivity leak for?",
+          "line": 287
+        }
+      ],
+      "sources": [],
+      "reviewLog": null,
+      "sections": [],
+      "extraMeta": {},
+      "file": "crypto-finance-the-tie.skilltree.md",
+      "line": 268
+    },
+    {
+      "id": "crypto.staking-metrics",
+      "branchId": "crypto",
+      "slug": "staking-metrics",
+      "title": "Staking Metrics (SR methodology)",
+      "requires": [
+        "crypto.eth-validators"
+      ],
+      "related": [],
+      "status": null,
+      "estimate": {
+        "text": "~2.5 h",
+        "hours": 2.5,
+        "optionalHours": null
+      },
+      "factsAsOf": "2026-09-23",
+      "why": "SR's core numbers; being able to recompute them makes me better at building and explaining them.",
+      "description": null,
+      "ranks": [
+        {
+          "id": "rank-1",
+          "number": 1,
+          "name": null,
+          "requires": [],
+          "items": [
+            {
+              "id": "sr-methodology-docs",
+              "key": "crypto.staking-metrics/sr-methodology-docs",
+              "ownerId": "crypto.staking-metrics",
+              "type": "read",
+              "rawType": "read",
+              "title": "SR metric and methodology docs",
+              "minutes": 90,
+              "timeText": "~1.5 h",
+              "timeSensitive": false,
+              "optional": false,
+              "checked": false,
+              "fields": [
+                {
+                  "label": "Resource",
+                  "text": "[@official@Reward Rate](https://docs.stakingrewards.com/staking-data/metrics/reward-rate), [@official@Real Reward Rate](https://docs.stakingrewards.com/staking-data/metrics/real-reward-rate), [@official@Ethereum SRB](https://docs.stakingrewards.com/staking-data/methodologies/ethereum-srb), [@official@Cosmos Hub SRB](https://docs.stakingrewards.com/staking-data/methodologies/cosmos-ecosystem-srb/cosmos-hub-srb)",
+                  "line": 298
+                },
+                {
+                  "label": "Note",
+                  "text": "SRB is non-compounded and ignores slashing. The Cosmos Hub formula is the reference for every Cosmos SDK chain SR covers.",
+                  "line": 299
+                },
+                {
+                  "label": "Done when",
+                  "text": "I recompute ATOM's reward rate by hand (annual provisions + annualized fees, minus community tax, divided by total staked) and land close to SR's published figure.",
+                  "line": 300
+                }
+              ],
+              "resources": [
+                {
+                  "type": "official",
+                  "title": "Reward Rate",
+                  "url": "https://docs.stakingrewards.com/staking-data/metrics/reward-rate",
+                  "field": "Resource"
+                },
+                {
+                  "type": "official",
+                  "title": "Real Reward Rate",
+                  "url": "https://docs.stakingrewards.com/staking-data/metrics/real-reward-rate",
+                  "field": "Resource"
+                },
+                {
+                  "type": "official",
+                  "title": "Ethereum SRB",
+                  "url": "https://docs.stakingrewards.com/staking-data/methodologies/ethereum-srb",
+                  "field": "Resource"
+                },
+                {
+                  "type": "official",
+                  "title": "Cosmos Hub SRB",
+                  "url": "https://docs.stakingrewards.com/staking-data/methodologies/cosmos-ecosystem-srb/cosmos-hub-srb",
+                  "field": "Resource"
+                }
+              ],
+              "do": null,
+              "skip": null,
+              "doneWhen": "I recompute ATOM's reward rate by hand (annual provisions + annualized fees, minus community tax, divided by total staked) and land close to SR's published figure.",
+              "ifStuck": null,
+              "fastTrack": null,
+              "verify": null,
+              "asOf": null,
+              "cadence": null,
+              "line": 297
+            },
+            {
+              "id": "real-vs-nominal",
+              "key": "crypto.staking-metrics/real-vs-nominal",
+              "ownerId": "crypto.staking-metrics",
+              "type": "do",
+              "rawType": "do",
+              "title": "Real vs nominal reward rate for ETH, SOL, ATOM",
+              "minutes": 60,
+              "timeText": "~1 h",
+              "timeSensitive": false,
+              "optional": false,
+              "checked": false,
+              "fields": [
+                {
+                  "label": "Do",
+                  "text": "apply SR's formula, (1 + reward rate) / (1 + inflation) − 1.",
+                  "line": 302
+                },
+                {
+                  "label": "Done when",
+                  "text": "I can say which has the highest nominal rate, which has the highest real rate, and why they differ.",
+                  "line": 303
+                }
+              ],
+              "resources": [],
+              "do": "apply SR's formula, (1 + reward rate) / (1 + inflation) − 1.",
+              "skip": null,
+              "doneWhen": "I can say which has the highest nominal rate, which has the highest real rate, and why they differ.",
+              "ifStuck": null,
+              "fastTrack": null,
+              "verify": null,
+              "asOf": null,
+              "cadence": null,
+              "line": 301
+            }
+          ],
+          "line": 296
+        }
+      ],
+      "recall": [
+        {
+          "id": "q1",
+          "text": "How is SR's reward rate calculated for a Cosmos SDK chain?",
+          "line": 306
+        },
+        {
+          "id": "q2",
+          "text": "Why can a high nominal reward rate hide a low real reward rate?",
+          "line": 307
+        },
+        {
+          "id": "q3",
+          "text": "What does SRB leave out, and why does that matter for comparisons?",
+          "line": 308
+        }
+      ],
+      "sources": [],
+      "reviewLog": null,
+      "sections": [],
+      "extraMeta": {},
+      "file": "crypto-finance-the-tie.skilltree.md",
+      "line": 289
+    }
+  ],
+  "quests": [],
+  "packs": [],
+  "diagnostics": [],
+  "shape": "bundle"
+}

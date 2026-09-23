@@ -36,6 +36,8 @@ export interface TimeLogRow {
   questId: string | null;
   /** `${ownerId}/${itemId}` for habit time. */
   habitKey: string | null;
+  /** Set when the log was created together with a habit check-off (deleted with it). */
+  habitLogId?: string | null;
   activity: Activity;
   minutes: number;
   /** Local date (Europe/Riga), YYYY-MM-DD. */
