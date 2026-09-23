@@ -105,16 +105,38 @@ function CanvasInner({ data, model, visible, selectedId, onSelect, panelOpen }: 
     [nodes],
   );
 
-  function fitAll(duration: number) {
-    // Wide screens keep the tree clear of the legend; phones fit just the orbs
-    // (the long branch titles would shrink everything to specks) below the HUD bar.
+  function fitPadding(): FitViewOptions["padding"] {
+    // Wide screens keep the tree clear of the legend; phones stay below the HUD bar.
     const wide = window.innerWidth >= 1024;
     const narrow = window.innerWidth < 640;
-    const padding: FitViewOptions["padding"] = narrow
+    return narrow
       ? { top: "84px", bottom: "64px", left: "16px", right: "16px" }
       : { top: "56px", bottom: "32px", left: wide ? "300px" : "24px", right: wide ? "72px" : "24px" };
+  }
+
+  function fitAll(duration: number) {
+    // Phones fit just the orbs: the long branch titles would shrink everything to specks.
+    const narrow = window.innerWidth < 640;
     const nodes = narrow ? fitNodes.filter((n) => !n.id.startsWith(BRANCH_PREFIX)) : fitNodes;
-    return rf.fitView({ nodes, padding, duration, maxZoom: 1.1 });
+    return rf.fitView({ nodes, padding: fitPadding(), duration, maxZoom: 1.1 });
+  }
+
+  /**
+   * First view: like a game's skill screen, open on me and the skills in play
+   * at a readable zoom, not the whole sky at specks. "Fit" shows everything.
+   */
+  function fitFrontier(duration: number) {
+    const ids = model.skills
+      .filter((m) => isInPlay(m.view) || model.questSkillIds.has(m.skill.id))
+      .map((m) => ({ id: m.skill.id }));
+    if (ids.length === 0) return fitAll(duration);
+    return rf.fitView({
+      nodes: [{ id: HUB_ID }, ...ids],
+      padding: fitPadding(),
+      duration,
+      minZoom: FAR_ZOOM + 0.05,
+      maxZoom: 0.8,
+    });
   }
 
   /** Moves the viewport so a skill sits in the part of the canvas the side panel leaves visible. */
@@ -139,7 +161,7 @@ function CanvasInner({ data, model, visible, selectedId, onSelect, panelOpen }: 
 
   // Node sizes are explicit, so the viewport can be fitted as soon as React Flow is up.
   function onInit() {
-    const done = selectedId ? panTo(selectedId, 0, true) : fitAll(0);
+    const done = selectedId ? panTo(selectedId, 0, true) : fitFrontier(0);
     void done.then(() => setReady(true));
   }
 
@@ -171,10 +193,7 @@ function CanvasInner({ data, model, visible, selectedId, onSelect, panelOpen }: 
       const id = meta.skill.id;
       const p = graph.pos.get(id);
       if (!p || id === hoverId) continue;
-      const v = meta.view;
-      const inPlay =
-        v.state === "available" || v.state === "in-progress" || v.state === "rusty" || v.readyToComplete;
-      const wanted = visible ? visible.has(id) : inPlay || id === selectedId || model.questSkillIds.has(id);
+      const wanted = visible ? visible.has(id) : isInPlay(meta.view) || id === selectedId || model.questSkillIds.has(id);
       if (wanted) out.push({ id, x: p.x, y: p.y, title: meta.skill.title, selected: id === selectedId });
     }
     return out.slice(0, MAX_FAR_LABELS);
@@ -227,6 +246,11 @@ function CanvasInner({ data, model, visible, selectedId, onSelect, panelOpen }: 
       </div>
     </CanvasContext>
   );
+}
+
+/** Skills I can act on right now. */
+function isInPlay(v: TreeModel["skills"][number]["view"]): boolean {
+  return v.state === "available" || v.state === "in-progress" || v.state === "rusty" || v.readyToComplete;
 }
 
 interface FarLabel {
