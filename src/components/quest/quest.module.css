@@ -1,0 +1,113 @@
+/* Quest-page-only effects: the objective strike-through, the completion
+   burst and the week track's constellation line. Reduced motion is handled
+   globally (globals.css clamps every animation and transition). */
+
+/* Strike-through that draws left → right when an objective is cleared.
+   The title is inline markdown, so the line is painted on each <p> fragment. */
+.title :where(p) {
+  background-image: linear-gradient(var(--strike, var(--gold)), var(--strike, var(--gold)));
+  background-repeat: no-repeat;
+  background-position: 0 58%;
+  background-size: 0% 1.5px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition:
+    background-size 0.6s cubic-bezier(0.6, 0.1, 0.2, 1),
+    color 0.4s ease;
+}
+.struck :where(p) {
+  background-size: 100% 1.5px;
+}
+
+/* The orb's shockwave ring on completion. */
+.burst::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9px;
+  border: 1.5px solid var(--gold-bright);
+  box-shadow: 0 0 18px var(--gold);
+  animation: burst 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  pointer-events: none;
+}
+@keyframes burst {
+  from {
+    transform: scale(0.7);
+    opacity: 0.95;
+  }
+  to {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+}
+
+/* A warm flash across the whole row. */
+.flash {
+  animation: flash 1.4s ease-out both;
+}
+@keyframes flash {
+  0% {
+    background-color: rgba(233, 196, 106, 0.16);
+    box-shadow: inset 0 0 0 1px rgba(233, 196, 106, 0.5);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px transparent;
+  }
+}
+
+/* Sparks that fly off a freshly cleared orb. */
+.spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 999px;
+  background: var(--gold-bright);
+  box-shadow: 0 0 6px var(--gold);
+  animation: spark 0.8s cubic-bezier(0.15, 0.6, 0.3, 1) both;
+  pointer-events: none;
+}
+@keyframes spark {
+  from {
+    transform: rotate(var(--a)) translateX(4px) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: rotate(var(--a)) translateX(30px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+/* The week track's hairline, faintly lit up to the current week. */
+.trackLine {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--gold) 55%, transparent) 0%,
+    color-mix(in oklab, var(--gold) 55%, transparent) var(--lit, 0%),
+    var(--ink-500) var(--lit, 0%),
+    var(--ink-500) 100%
+  );
+}
+
+/* Hatched band for the weekly hours target. */
+.band {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in oklab, var(--gold) 22%, transparent) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+/* Accordion chevron turns with the native <details> state. */
+.week[open] .chevron {
+  transform: rotate(90deg);
+}
+.week > summary {
+  list-style: none;
+}
+.week > summary::-webkit-details-marker {
+  display: none;
+}
