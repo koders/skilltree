@@ -1,0 +1,235 @@
+/*
+ * Motion and a few effects for the skill panel that utilities can't express.
+ * globals.css clamps every animation under prefers-reduced-motion, so each
+ * animation must end on its visible state.
+ */
+
+/* ---------------------------------------------------------------- drawer */
+
+/* `backwards` (not `both`): once in, the inline drag transform must win. */
+.drawer {
+  animation: drawer-in 0.42s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+@keyframes drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .drawer {
+    animation-name: sheet-in;
+    animation-duration: 0.38s;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+/* Content swap when another skill is selected in an open panel. */
+.body {
+  animation: body-in 0.32s ease-out both;
+}
+
+@keyframes body-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* Branch-hued nebula behind the header. */
+.nebula {
+  background:
+    radial-gradient(420px 220px at 88% -30%, color-mix(in oklab, var(--branch) 22%, transparent), transparent 70%),
+    radial-gradient(260px 160px at -10% 0%, color-mix(in oklab, var(--branch) 10%, transparent), transparent 70%);
+  -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent);
+  mask-image: linear-gradient(to bottom, black 55%, transparent);
+}
+
+.stars {
+  background-image:
+    radial-gradient(1px 1px at 22% 30%, rgba(236, 230, 214, 0.5), transparent 60%),
+    radial-gradient(1px 1px at 64% 18%, rgba(236, 230, 214, 0.35), transparent 60%),
+    radial-gradient(1.5px 1.5px at 82% 52%, rgba(233, 196, 106, 0.5), transparent 60%),
+    radial-gradient(1px 1px at 44% 66%, rgba(158, 180, 255, 0.4), transparent 60%),
+    radial-gradient(1px 1px at 92% 12%, rgba(236, 230, 214, 0.4), transparent 60%);
+}
+
+/* ---------------------------------------------------------------- item node (checkbox) */
+
+.node {
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    box-shadow 0.25s,
+    transform 0.12s;
+}
+.node:active:not(:disabled) {
+  transform: scale(0.88);
+}
+
+.nodeDone {
+  animation: node-pop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+.nodeDone::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--gold-bright);
+  animation: node-ring 0.7s ease-out both;
+  pointer-events: none;
+}
+
+@keyframes node-pop {
+  0% {
+    transform: scale(0.7);
+  }
+  60% {
+    transform: scale(1.14);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes node-ring {
+  from {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
+/* ---------------------------------------------------------------- reveal */
+
+.reveal {
+  animation: reveal 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* ---------------------------------------------------------------- recall result */
+
+.burst {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation:
+    burst-in 1s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    spin 60s linear 1s infinite;
+}
+
+@keyframes burst-in {
+  from {
+    opacity: 0;
+    transform: scale(0.3) rotate(-30deg);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.core {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: core-in 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.35) 0.1s both;
+}
+
+@keyframes core-in {
+  from {
+    opacity: 0;
+    transform: scale(0.2) rotate(-45deg);
+  }
+}
+
+.halo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: halo 3.2s ease-in-out 1s infinite both;
+}
+
+@keyframes halo {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.08);
+  }
+}
+
+/* Constellation segments draw in; pathLength="1" on each line. */
+.segment {
+  stroke-dasharray: 1;
+  animation: draw 0.45s ease-out both;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.starLit {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: star-lit 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.5) both;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes star-lit {
+  0% {
+    opacity: 0.25;
+    transform: scale(0.4);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.headline {
+  animation: headline-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.5s both;
+}
+
+@keyframes headline-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* ---------------------------------------------------------------- recall progress */
+
+.dotCurrent {
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--gold) 25%, transparent),
+    0 0 12px var(--gold);
+}
